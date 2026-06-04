@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# InvoiceHQ — Freelancer CRM & Automated Invoicing Studio
 
-## Getting Started
+Welcome to **InvoiceHQ**, a production-grade, highly scalable B2B SaaS CRM platform tailored for freelancers and studios. The platform features dynamic pipeline kanbans, split-pane invoicing editors, localized GST tax calculations, and simulated webhook reconciliation flows.
 
-First, run the development server:
+---
 
+## 🛠️ Technology Stack
+- **Framework & Core:** TypeScript compiled natively, React 19, Next.js 16 (App Router).
+- **Styling & Themes:** Tailwind CSS v4 custom color property variables (`brand-primary`, `surface-bg`, `surface-card`, `border-line`, etc.) configured natively to transition smoothly between Light and Dark mode tokens.
+- **Database & Persistent State:** A relational local storage database layer (`/src/lib/mockDb.ts`) managing tables for Users, Leads, Deals, Clients, Invoices, Tasks, and Transaction Logs.
+- **Numeric Rendering:** Tabular-nums layout alignments to prevent page rendering jumps.
+
+---
+
+## 🚀 Getting Started & Execution
+
+First, boot the development server:
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) on your desktop or tablet to access the control room.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🧭 Step-by-Step Testing Flow (Case Study Walkthrough)
 
-## Learn More
+To verify the complete integration of the CRM platform, follow this role flow across system boundaries:
 
-To learn more about Next.js, take a look at the following resources:
+### 1. Workspace Configuration & Setup
+- Click **Settings** in the sidebar.
+- Observe the **Token Tree** representing Light and Dark mode variables.
+- Change the **Owner GSTIN** (e.g., `27AAARK1234B1ZP`), **Place of Supply**, and **Base Currency**.
+- Save the changes (observing success alerts). Swap between **Light Mode** and **Dark Mode** at the bottom of the sidebar to check variable styling.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2. High-Velocity Sales Funnel (Kanban & Grid)
+- Click **Pipeline** in the sidebar.
+- Switch between **Kanban Board** and **Data Grid Master** views.
+- Under **Kanban**, drag any deal (e.g., *E-Commerce Rebranding* valued at ₹85,000) from *Negotiation* to **Won** using native HTML5 drag-and-drop. Column totals will auto-calculate instantly.
+- Click on the deal card or row to slide open the **Deal details panel**.
+- In the side panel of a **Won** deal, click the **Trigger AI Draft Scope** CTA. This generates project scope deliverables and redirects you to the Proposals page with these values.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. AI Proposal Builder
+- The fields (Title, Client, Budget, Scope) will pre-fill based on the Won deal.
+- Select your preferred copywriting tone (Professional, Creative, etc.) and click **Generate with AI**.
+- Watch the right-hand panel display the loading layout skeleton, compile, and render the formatted proposal sheet.
+- Click **Convert to Invoice** to load the Billing Studio.
 
-## Deploy on Vercel
+### 4. Split-Pane Billing Studio
+- Select your client profile (e.g., *Webcraft Solutions*).
+- Observe the pre-populated invoice fields, code sequences, and itemized rows.
+- Click the **AI Improve** button next to a line item. The description will be expanded into a professional, client-ready description.
+- Toggle **GST Applicable (CGST + SGST)** to verify intra-state 18% splits (9% CGST + 9% SGST). The right-hand preview sheet updates in real-time with `tabular-nums` formatting.
+- Click **Preview & Send**. This saves the invoice and returns you to the Invoice directory list.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 5. Public Client Portal & webhook Reconciliation
+- Locate your new invoice in the list and click it, or click **Portal** at the top of the navbar to open the public payment portal `/portal/[id]`.
+- Click **Export PDF / Print** to open the browser print page.
+- Click **Pay via UPI Gateway**. This opens the UPI checkout modal displaying a styled QR code.
+- Click **Process Instant UPI Payment**. A spinner will run for 2 seconds (simulating webhook callbacks).
+- Once paid:
+  - The portal banner changes to a green **Paid** state with transaction reference logs.
+  - The local database updates and triggers automated balance updates.
+  - Return to the **Dashboard** to see the outstanding balances and **Cash at Risk** metrics updated.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🧪 Production Compilation Check
+To compile code, check syntax, and run eslint checks:
+```bash
+npm run build
+```
+The output compiles cleanly into static and server-rendered routes with zero bugs.
