@@ -3,9 +3,22 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Bell, ExternalLink, ShieldAlert, CheckCircle, Clock, Sun, Moon } from "lucide-react";
+import {
+  Search,
+  Bell,
+  ExternalLink,
+  ShieldAlert,
+  CheckCircle,
+  Clock,
+  Sun,
+  Moon,
+  User,
+  LogOut,
+  ChevronDown,
+} from "lucide-react";
 import { mockDb, ActivityLog } from "@/lib/mockDb";
 import { useTheme } from "./ThemeProvider";
+import { useAuth } from "./AuthProvider";
 
 interface NavbarProps {
   title: string;
@@ -16,7 +29,9 @@ interface NavbarProps {
 export default function Navbar({ title, subtitle, onOpenSearch }: NavbarProps) {
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -26,22 +41,27 @@ export default function Navbar({ title, subtitle, onOpenSearch }: NavbarProps) {
 
     // Simulate checking for overdue items or new events
     const invoices = mockDb.getInvoices();
-    const overdueCount = invoices.filter(i => i.status === "overdue").length;
+    const overdueCount = invoices.filter((i) => i.status === "overdue").length;
     setUnreadCount(overdueCount);
 
     const handleDbUpdate = () => {
       setLogs(mockDb.getLogs().slice(0, 5));
       const updated = mockDb.getInvoices();
-      setUnreadCount(updated.filter(i => i.status === "overdue").length);
+      setUnreadCount(updated.filter((i) => i.status === "overdue").length);
     };
 
     window.addEventListener("invoicehq_db_update", handleDbUpdate);
-    return () => window.removeEventListener("invoicehq_db_update", handleDbUpdate);
+    return () =>
+      window.removeEventListener("invoicehq_db_update", handleDbUpdate);
   }, []);
 
   const handleNotificationClick = (log: ActivityLog) => {
     setShowNotifications(false);
-    if (log.type === "invoice_created" || log.type === "payment" || log.type === "webhook_reconciliation") {
+    if (
+      log.type === "invoice_created" ||
+      log.type === "payment" ||
+      log.type === "webhook_reconciliation"
+    ) {
       router.push("/invoices");
     } else if (log.type === "deal_moved") {
       router.push("/pipeline");
@@ -54,8 +74,14 @@ export default function Navbar({ title, subtitle, onOpenSearch }: NavbarProps) {
     <header className="sticky top-0 right-0 z-30 w-full bg-surface-card/85 backdrop-blur-md border-b border-border-line px-8 py-4 flex items-center justify-between select-none">
       {/* Title / Breadcrumbs */}
       <div>
-        <h2 className="text-lg font-bold text-text-main leading-tight">{title}</h2>
-        {subtitle && <p className="text-[11px] text-text-muted font-medium mt-0.5">{subtitle}</p>}
+        <h2 className="text-lg font-bold text-text-main leading-tight">
+          {title}
+        </h2>
+        {subtitle && (
+          <p className="text-[11px] text-text-muted font-medium mt-0.5">
+            {subtitle}
+          </p>
+        )}
       </div>
 
       {/* Center/Right Toolbar */}
@@ -76,7 +102,9 @@ export default function Navbar({ title, subtitle, onOpenSearch }: NavbarProps) {
         <button
           onClick={toggleTheme}
           className="p-2.5 rounded-xl border border-border-line hover:border-brand-primary/40 hover:text-brand-primary text-text-muted bg-surface-card transition-all focus-ring-indigo shadow-sm"
-          title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
+          title={
+            theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"
+          }
         >
           {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
         </button>
@@ -105,11 +133,16 @@ export default function Navbar({ title, subtitle, onOpenSearch }: NavbarProps) {
           {showNotifications && (
             <>
               {/* Backdrop layer to click out */}
-              <div className="fixed inset-0 z-10" onClick={() => setShowNotifications(false)} />
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setShowNotifications(false)}
+              />
 
               <div className="absolute right-0 mt-2 w-80 bg-surface-card border border-border-line rounded-2xl shadow-xl z-20 py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
                 <div className="px-4 py-2 border-b border-border-line flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-text-main uppercase tracking-wider">System Alerts</h3>
+                  <h3 className="text-xs font-bold text-text-main uppercase tracking-wider">
+                    System Alerts
+                  </h3>
                   {unreadCount > 0 && (
                     <span className="text-[10px] bg-state-danger/10 text-state-danger font-bold px-2 py-0.5 rounded-full">
                       {unreadCount} Actions Pending
@@ -124,8 +157,12 @@ export default function Navbar({ title, subtitle, onOpenSearch }: NavbarProps) {
                     </div>
                   ) : (
                     logs.map((log) => {
-                      const isPayment = log.type === "payment" || log.type === "webhook_reconciliation";
-                      const isAlert = log.description.toLowerCase().includes("overdue") || log.type === "webhook_reconciliation";
+                      const isPayment =
+                        log.type === "payment" ||
+                        log.type === "webhook_reconciliation";
+                      const isAlert =
+                        log.description.toLowerCase().includes("overdue") ||
+                        log.type === "webhook_reconciliation";
 
                       return (
                         <div
@@ -135,9 +172,15 @@ export default function Navbar({ title, subtitle, onOpenSearch }: NavbarProps) {
                         >
                           <div className="mt-0.5 shrink-0">
                             {isPayment ? (
-                              <CheckCircle size={15} className="text-state-success" />
+                              <CheckCircle
+                                size={15}
+                                className="text-state-success"
+                              />
                             ) : isAlert ? (
-                              <ShieldAlert size={15} className="text-state-danger" />
+                              <ShieldAlert
+                                size={15}
+                                className="text-state-danger"
+                              />
                             ) : (
                               <Clock size={15} className="text-brand-primary" />
                             )}
@@ -147,7 +190,10 @@ export default function Navbar({ title, subtitle, onOpenSearch }: NavbarProps) {
                               {log.description}
                             </p>
                             <span className="text-[9px] text-text-muted mt-1 block">
-                              {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(log.timestamp).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
                             </span>
                           </div>
                         </div>
@@ -169,6 +215,46 @@ export default function Navbar({ title, subtitle, onOpenSearch }: NavbarProps) {
             </>
           )}
         </div>
+
+        {user && (
+          <div className="relative">
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="flex items-center gap-2 rounded-xl border border-border-line bg-surface-card px-3 py-2 text-text-main hover:border-brand-primary/45 focus-ring-indigo transition-all shadow-sm"
+            >
+              <User size={16} />
+              <span className="text-xs font-semibold">
+                {user.name.split(" ")[0]}
+              </span>
+              <ChevronDown size={14} />
+            </button>
+
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-2 w-48 rounded-3xl border border-border-line bg-surface-card shadow-xl z-20 py-2 animate-in fade-in duration-150">
+                <Link
+                  href="/profile"
+                  onClick={() => setShowProfileMenu(false)}
+                  className="block px-4 py-3 text-sm text-text-main hover:bg-surface-bg"
+                >
+                  Profile
+                </Link>
+                <button
+                  onClick={() => {
+                    logout();
+                    setShowProfileMenu(false);
+                    router.push("/login");
+                  }}
+                  className="w-full text-left px-4 py-3 text-sm text-text-muted hover:bg-surface-bg"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <LogOut size={14} />
+                    Logout
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );

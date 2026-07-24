@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { mockDb } from "@/lib/mockDb";
+import { useAuth } from "@/components/AuthProvider";
 import {
   LayoutDashboard,
   FileText,
@@ -17,6 +18,7 @@ import {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
   const [overdueCount, setOverdueCount] = useState(0);
 
   useEffect(() => {
@@ -29,12 +31,18 @@ export default function Sidebar() {
     };
 
     window.addEventListener("invoicehq_db_update", handleDbUpdate);
-    return () => window.removeEventListener("invoicehq_db_update", handleDbUpdate);
+    return () =>
+      window.removeEventListener("invoicehq_db_update", handleDbUpdate);
   }, []);
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Invoices", href: "/invoices", icon: FileText, badge: overdueCount > 0 ? overdueCount : undefined },
+    {
+      name: "Invoices",
+      href: "/invoices",
+      icon: FileText,
+      badge: overdueCount > 0 ? overdueCount : undefined,
+    },
     { name: "Clients", href: "/clients", icon: Users },
     { name: "Proposals", href: "/proposals", icon: Sparkles },
     { name: "Pipeline", href: "/pipeline", icon: GitBranch },
@@ -51,8 +59,12 @@ export default function Sidebar() {
               <TrendingUp size={22} className="stroke-[2.5]" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-text-main leading-tight tracking-tight">InvoiceHQ</h1>
-              <span className="text-[11px] font-semibold uppercase text-brand-primary tracking-widest">Workspace</span>
+              <h1 className="text-lg font-bold text-text-main leading-tight tracking-tight">
+                InvoiceHQ
+              </h1>
+              <span className="text-[11px] font-semibold uppercase text-brand-primary tracking-widest">
+                Workspace
+              </span>
             </div>
           </div>
           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-primary/10 text-brand-primary uppercase">
@@ -65,7 +77,8 @@ export default function Sidebar() {
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto py-2">
         {navItems.map((item) => {
           const isActive =
-            pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
+            pathname === item.href ||
+            (item.href !== "/" && pathname?.startsWith(item.href));
           const Icon = item.icon;
 
           return (
@@ -82,7 +95,9 @@ export default function Sidebar() {
                 <Icon
                   size={18}
                   className={`transition-colors duration-200 ${
-                    isActive ? "text-brand-primary" : "text-text-muted group-hover:text-text-main"
+                    isActive
+                      ? "text-brand-primary"
+                      : "text-text-muted group-hover:text-text-main"
                   }`}
                 />
                 <span>{item.name}</span>
@@ -102,14 +117,27 @@ export default function Sidebar() {
         <div className="p-2.5 rounded-xl bg-surface-card border border-border-line flex items-center justify-between cursor-pointer hover:border-brand-primary/50 transition-colors group">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-brand-primary flex items-center justify-center text-white font-bold text-sm shadow-md shadow-brand-primary/20">
-              AK
+              {user
+                ? user.name
+                    .split(" ")
+                    .map((segment) => segment[0])
+                    .slice(0, 2)
+                    .join("")
+                : "AK"}
             </div>
             <div className="min-w-0">
-              <h4 className="text-xs font-semibold text-text-main truncate">Arjun Kumar</h4>
-              <p className="text-[10px] text-text-muted truncate leading-none">arkdesign.in</p>
+              <h4 className="text-xs font-semibold text-text-main truncate">
+                {user?.name ?? "Arjun Kumar"}
+              </h4>
+              <p className="text-[10px] text-text-muted truncate leading-none">
+                {user?.email ?? "arkdesign.in"}
+              </p>
             </div>
           </div>
-          <ChevronDown size={14} className="text-text-muted group-hover:text-text-main transition-colors" />
+          <ChevronDown
+            size={14}
+            className="text-text-muted group-hover:text-text-main transition-colors"
+          />
         </div>
       </div>
     </aside>
