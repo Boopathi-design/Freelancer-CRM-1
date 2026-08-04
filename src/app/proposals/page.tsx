@@ -3,356 +3,161 @@
 import React, { useEffect, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import WorkspaceLayout from "@/components/WorkspaceLayout";
-import { mockDb, Client } from "@/lib/mockDb";
+import { mockDb, Proposal } from "@/lib/mockDb";
 import { useRouter as useNextRouter } from "next/navigation";
 import {
-  Sparkles,
-  ArrowRight,
-  Loader2,
+  Plus,
+  Search,
   FileText,
+  ArrowRight,
+  MoreVertical,
+  CheckCircle2,
   Clock,
-  Briefcase,
-  AlertCircle,
-  TrendingUp,
-  Download,
-  Share2,
+  Eye,
+  Send,
+  XCircle,
+  FileBadge
 } from "lucide-react";
 
-export default function Proposals() {
+// Helper for status styling
+const getStatusConfig = (status: string) => {
+  switch (status) {
+    case "Draft": return { bg: "bg-surface-elevated border border-border-divider", text: "text-text-muted", icon: <FileText size={14} className="mr-1" /> };
+    case "Sent": return { bg: "bg-blue-500/10 border border-blue-500/30", text: "text-blue-500", icon: <Send size={14} className="mr-1" /> };
+    case "Viewed": return { bg: "bg-purple-500/10 border border-purple-500/30", text: "text-purple-500", icon: <Eye size={14} className="mr-1" /> };
+    case "Accepted": return { bg: "bg-green-500/10 border border-green-500/30", text: "text-green-500", icon: <CheckCircle2 size={14} className="mr-1" /> };
+    case "Declined": return { bg: "bg-red-500/10 border border-red-500/30", text: "text-red-500", icon: <XCircle size={14} className="mr-1" /> };
+    case "Converted": return { bg: "bg-emerald-500/10 border border-emerald-500/30", text: "text-emerald-500", icon: <FileBadge size={14} className="mr-1" /> };
+    default: return { bg: "bg-surface-elevated", text: "text-text-main", icon: null };
+  }
+};
+
+const getSuggestedAction = (status: string) => {
+  switch (status) {
+    case "Draft": return "Send";
+    case "Sent":
+    case "Viewed": return "Follow Up";
+    case "Accepted": return "Convert to Invoice";
+    default: return "View";
+  }
+};
+
+export default function ProposalList() {
   const router = useNextRouter();
-  const [clients, setClients] = useState<Client[]>([]);
-
-  // Form Fields
-  const [title, setTitle] = useState("");
-  const [clientName, setClientName] = useState("");
-  const [scope, setScope] = useState("");
-  const [deliverables, setDeliverables] = useState("");
-  const [duration, setDuration] = useState("4 weeks");
-  const [budget, setBudget] = useState("");
-  const [tone, setTone] = useState("Professional");
-
-  // Output Generation States
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedDoc, setGeneratedDoc] = useState<string | null>(null);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    setClients(mockDb.getClients());
-
-    // Check if redirecting from pipeline with preset data
-    if (typeof window !== "undefined") {
-      const draftTitle = localStorage.getItem("invoicehq_proposal_draft_title");
-      const draftClient = localStorage.getItem(
-        "invoicehq_proposal_draft_client",
-      );
-      const draftScope = localStorage.getItem("invoicehq_proposal_draft_scope");
-      const draftBudget = localStorage.getItem(
-        "invoicehq_proposal_draft_budget",
-      );
-
-      if (draftTitle) setTitle(draftTitle);
-      if (draftClient) setClientName(draftClient);
-      if (draftScope) {
-        setScope(draftScope);
-        setDeliverables(
-          "Figma Files, Web App Prototypes, Responsive CSS Layout, Relational Schemas",
-        );
-      }
-      if (draftBudget) setBudget(draftBudget);
-
-      // Clean up localStorage keys so they don't persist on manual refreshes
-      localStorage.removeItem("invoicehq_proposal_draft_title");
-      localStorage.removeItem("invoicehq_proposal_draft_client");
-      localStorage.removeItem("invoicehq_proposal_draft_scope");
-      localStorage.removeItem("invoicehq_proposal_draft_budget");
-    }
+    setProposals(mockDb.getProposals());
   }, []);
 
-  const triggerToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 3000);
-  };
-
-  const handleGenerate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title || !clientName || !budget) {
-      alert("Please fill in Title, Client and Budget");
-      return;
-    }
-
-    setIsGenerating(true);
-    setGeneratedDoc(null);
-
-    // Simulate AI compilation
-    setTimeout(() => {
-      setIsGenerating(false);
-      const doc = `PROPOSAL FOR SERVICES
-PROJECT: ${title.toUpperCase()}
-CLIENT: ${clientName}
-COMPILED BY: ARK Design Studio
-DATE: ${new Date().toLocaleDateString("en-IN")}
-
-1. EXECUTIVE SUMMARY
-ARK Design Studio is pleased to submit this proposal for ${title} to support ${clientName}'s strategic goals. We bring verified expertise in clean web architectures, rapid rendering UI/UX templates, and custom product development cycles.
-
-2. DETAILED SCOPE OF WORK
-${scope || "Deliver full-scale design implementation and software architecture."}
-
-3. PROJECT DELIVERABLES
-The scope encompasses the following specific milestones:
-${
-  deliverables
-    .split(",")
-    .map((d, i) => `${i + 1}. ${d.trim()}`)
-    .join("\n") ||
-  "1. Figma Design Files\n2. Next.js Prototypes\n3. Relational Schemas\n4. Local Payment Gateways integration"
-}
-
-4. TIMELINE & ESTIMATED INVESTMENT
-- Estimated Duration: ${duration}
-- Proposed Budget: ₹${parseFloat(budget).toLocaleString("en-IN")} (Plus applicable CGST+SGST tax rates)
-
-5. CONVERSION PROTOCOLS
-Upon sign-off, this agreement transitions immediately to an active billing milestone schedule.`;
-
-      setGeneratedDoc(doc);
-      triggerToast("AI Proposal generated successfully!");
-      mockDb.addLog(
-        "proposal_generated",
-        `Created AI proposal template '${title}' for client ${clientName} valued at ₹${parseFloat(budget).toLocaleString("en-IN")}.`,
-      );
-    }, 2000);
-  };
-
-  const handleConvertToInvoice = () => {
-    if (!generatedDoc) return;
-
-    // Save project specs in localStorage to pre-fill the Invoice Builder page
-    if (typeof window !== "undefined") {
-      localStorage.setItem("invoicehq_prefill_client", clientName);
-      localStorage.setItem("invoicehq_prefill_amount", budget);
-      localStorage.setItem("invoicehq_prefill_title", title);
-    }
-
-    triggerToast("Proposal converted! Initializing Billing Studio...");
-
-    // Redirect to Invoices screen
-    router.push("/invoices?new=true");
-  };
+  const filteredProposals = proposals.filter((p) =>
+    p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.clientName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <ProtectedRoute>
       <WorkspaceLayout
-        title="Proposals Studio"
-        subtitle="Generate project proposals and convert them to active bills"
+        title="Proposals"
+        subtitle="Manage and track your project pitches"
       >
-        {/* Toast Alert */}
-        {toastMsg && (
-          <div className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl border border-slate-800 text-xs font-semibold flex items-center gap-2.5 animate-in slide-in-from-bottom-5 duration-200">
-            <Sparkles size={14} className="text-brand-primary animate-pulse" />
-            <span>{toastMsg}</span>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-muted" size={18} />
+            <input
+              type="text"
+              placeholder="Search proposals..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-surface-elevated border border-border-divider rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-brand-primary transition-colors text-text-main"
+            />
           </div>
-        )}
+          <button
+            onClick={() => router.push("/proposals/new")}
+            className="w-full md:w-auto bg-brand-primary text-brand-dark px-6 py-2.5 rounded-xl font-medium hover:bg-brand-primary/90 transition-all active:scale-95 flex items-center justify-center gap-2"
+          >
+            <Plus size={18} />
+            New Proposal
+          </button>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch h-[calc(100vh-140px)]">
-          {/* Left Side: Form Inputs */}
-          <div className="bg-surface-card border border-border-line rounded-2xl p-6 shadow-sm overflow-y-auto flex flex-col justify-between">
-            <form onSubmit={handleGenerate} className="space-y-4">
-              <div className="flex items-center gap-2.5 pb-4 border-b border-border-line">
-                <Sparkles
-                  className="text-brand-primary animate-pulse"
-                  size={18}
-                />
-                <h3 className="text-sm font-bold text-text-main">
-                  AI Proposal Generator
-                </h3>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">
-                  Project Title
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Website Redesign for Webcraft"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-bg border border-border-line text-xs text-text-main outline-none focus:border-brand-primary"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">
-                  Client Organization
-                </label>
-                <select
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  required
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-bg border border-border-line text-xs text-text-main outline-none focus:border-brand-primary"
-                >
-                  <option value="">Select client...</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.company}>
-                      {c.company}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">
-                  Scope of Work Details
-                </label>
-                <textarea
-                  required
-                  placeholder="Complete website redesign including UX audit, wireframes, visual systems, and handoffs..."
-                  value={scope}
-                  onChange={(e) => setScope(e.target.value)}
-                  rows={3}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-bg border border-border-line text-xs text-text-main outline-none focus:border-brand-primary resize-none leading-relaxed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">
-                  Core Deliverables
-                </label>
-                <input
-                  type="text"
-                  placeholder="Comma separated: Wireframes, UI Designs, Figma System, React Code"
-                  value={deliverables}
-                  onChange={(e) => setDeliverables(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-bg border border-border-line text-xs text-text-main outline-none focus:border-brand-primary"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">
-                    Duration
-                  </label>
-                  <input
-                    type="text"
-                    value={duration}
-                    onChange={(e) => setDuration(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-surface-bg border border-border-line text-xs text-text-main outline-none focus:border-brand-primary"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">
-                    Budget (₹)
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="Budget ₹"
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-surface-bg border border-border-line text-xs text-text-main outline-none focus:border-brand-primary tabular-nums"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">
-                    Tone
-                  </label>
-                  <select
-                    value={tone}
-                    onChange={(e) => setTone(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-surface-bg border border-border-line text-xs text-text-main outline-none focus:border-brand-primary"
-                  >
-                    <option value="Professional">Professional</option>
-                    <option value="Creative">Creative</option>
-                    <option value="Direct/Concise">Concise</option>
-                  </select>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isGenerating}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold transition-all focus-ring-indigo shadow-lg shadow-brand-primary/20 disabled:opacity-50 cursor-pointer"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 size={14} className="animate-spin" />
-                    <span>Analyzing Project Scope...</span>
-                  </>
+        <div className="bg-surface-card border border-border-divider rounded-2xl overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-surface-elevated border-b border-border-divider">
+                  <th className="py-4 px-6 text-xs font-semibold text-text-muted uppercase tracking-wider">Proposal Title</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-text-muted uppercase tracking-wider">Client</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-text-muted uppercase tracking-wider">Status</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-text-muted uppercase tracking-wider">Budget</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-text-muted uppercase tracking-wider">Created</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-text-muted uppercase tracking-wider">Suggested Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredProposals.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 px-6 text-center text-text-muted">
+                      No proposals found. Create one to get started!
+                    </td>
+                  </tr>
                 ) : (
-                  <>
-                    <Sparkles size={14} />
-                    <span>Generate with AI</span>
-                  </>
+                  filteredProposals.map((proposal) => {
+                    const statusConfig = getStatusConfig(proposal.status);
+                    const action = getSuggestedAction(proposal.status);
+                    
+                    return (
+                      <tr 
+                        key={proposal.id} 
+                        onClick={() => router.push(`/proposals/${proposal.id}`)}
+                        className="border-b border-border-divider hover:bg-surface-elevated/50 transition-colors cursor-pointer group"
+                      >
+                        <td className="py-4 px-6">
+                          <div className="font-medium text-text-main">{proposal.title}</div>
+                          <div className="text-xs text-text-muted mt-1">{proposal.id}</div>
+                        </td>
+                        <td className="py-4 px-6 text-text-main">{proposal.clientName}</td>
+                        <td className="py-4 px-6">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>
+                            {statusConfig.icon}
+                            {proposal.status}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 text-text-main font-medium">
+                          ₹{proposal.budget.toLocaleString("en-IN")}
+                        </td>
+                        <td className="py-4 px-6 text-text-muted text-sm">
+                          {new Date(proposal.createdAt).toLocaleDateString("en-IN", {
+                            day: 'numeric', month: 'short', year: 'numeric'
+                          })}
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center justify-between">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (action === "Convert to Invoice") {
+                                  router.push("/invoices"); // or /invoices/new
+                                } else {
+                                  router.push(`/proposals/${proposal.id}`);
+                                }
+                              }}
+                              className="text-sm font-medium text-brand-primary hover:text-brand-primary/80 transition-colors flex items-center gap-1"
+                            >
+                              {action} <ArrowRight size={14} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                            </button>
+                            <button className="text-text-muted hover:text-text-main p-1 rounded-md hover:bg-surface-elevated transition-colors" onClick={(e) => e.stopPropagation()}>
+                              <MoreVertical size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
-              </button>
-            </form>
-          </div>
-
-          {/* Right Side: Preview / Generated Output Document */}
-          <div className="bg-surface-card border border-border-line rounded-2xl p-6 shadow-sm overflow-y-auto flex flex-col justify-between items-stretch">
-            {isGenerating && (
-              <div className="flex-1 flex flex-col justify-center items-stretch space-y-4 p-8">
-                <div className="h-6 bg-surface-bg rounded animate-pulse w-1/3" />
-                <div className="h-4 bg-surface-bg rounded animate-pulse w-1/2" />
-                <div className="space-y-2 pt-4">
-                  <div className="h-3 bg-surface-bg rounded animate-pulse" />
-                  <div className="h-3 bg-surface-bg rounded animate-pulse" />
-                  <div className="h-3 bg-surface-bg rounded animate-pulse w-5/6" />
-                </div>
-                <div className="space-y-2 pt-4">
-                  <div className="h-3 bg-surface-bg rounded animate-pulse" />
-                  <div className="h-3 bg-surface-bg rounded animate-pulse w-3/4" />
-                </div>
-              </div>
-            )}
-
-            {!isGenerating && !generatedDoc && (
-              <div className="flex-1 flex flex-col justify-center items-center text-center p-8">
-                <div className="w-12 h-12 rounded-full bg-surface-bg border border-border-line flex items-center justify-center text-text-muted mb-4">
-                  <Sparkles size={20} />
-                </div>
-                <h3 className="text-xs font-bold text-text-main">
-                  Generated Proposal
-                </h3>
-                <p className="text-[11px] text-text-muted mt-1 max-w-[200px] leading-normal">
-                  Fill in the details and generate your proposal
-                </p>
-              </div>
-            )}
-
-            {!isGenerating && generatedDoc && (
-              <div className="flex-grow flex flex-col justify-between h-full space-y-6">
-                {/* Document Sheet layout */}
-                <div className="flex-1 p-6 bg-surface-bg/50 border border-border-line rounded-xl overflow-y-auto font-mono text-[10px] whitespace-pre-wrap leading-relaxed text-text-main tabular-nums select-text">
-                  {generatedDoc}
-                </div>
-
-                {/* Action bar for generated document */}
-                <div className="flex items-center gap-3 pt-4 border-t border-border-line">
-                  <button
-                    onClick={handleConvertToInvoice}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold transition-all focus-ring-indigo shadow-md shadow-brand-primary/10 cursor-pointer"
-                  >
-                    <FileText size={13} />
-                    <span>Convert to Invoice</span>
-                    <ArrowRight size={13} />
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      triggerToast("Proposal downloaded as PDF (simulation)")
-                    }
-                    className="p-2.5 rounded-xl border border-border-line hover:bg-surface-bg text-text-muted hover:text-text-main transition-colors cursor-pointer"
-                    title="Download PDF"
-                  >
-                    <Download size={14} />
-                  </button>
-                </div>
-              </div>
-            )}
+              </tbody>
+            </table>
           </div>
         </div>
       </WorkspaceLayout>

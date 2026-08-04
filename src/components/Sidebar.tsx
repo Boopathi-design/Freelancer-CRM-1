@@ -46,6 +46,7 @@ export default function Sidebar() {
     { name: "Clients", href: "/clients", icon: Users },
     { name: "Proposals", href: "/proposals", icon: Sparkles },
     { name: "Pipeline", href: "/pipeline", icon: GitBranch },
+    { name: "Reports", href: "/reports", icon: TrendingUp },
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 

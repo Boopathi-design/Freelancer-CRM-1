@@ -33,6 +33,21 @@ export interface Deal {
   notes: string;
 }
 
+export interface Proposal {
+  id: string; // e.g. PROP-2024-01
+  title: string;
+  clientId: string;
+  clientName: string;
+  status: "Draft" | "Sent" | "Viewed" | "Accepted" | "Declined" | "Converted";
+  budget: number;
+  createdAt: string;
+  scopeOfWork: string;
+  deliverables: string[];
+  duration: string;
+  tone: string;
+  content: string; // AI generated text
+}
+
 export interface LineItem {
   id: string;
   description: string;
@@ -336,6 +351,37 @@ const DEFAULT_DEALS: Deal[] = [
   }
 ];
 
+const DEFAULT_PROPOSALS: Proposal[] = [
+  {
+    id: "PROP-2024-01",
+    title: "Brand Identity Redesign",
+    clientId: "c1",
+    clientName: "Webcraft Solutions",
+    status: "Sent",
+    budget: 85000,
+    createdAt: "2026-06-01",
+    scopeOfWork: "Complete redesign of brand guidelines, logo, and marketing collaterals.",
+    deliverables: ["Logo Source Files", "Brand Book (PDF)", "Social Media Templates"],
+    duration: "4 weeks",
+    tone: "Professional yet creative",
+    content: "## Proposal: Brand Identity Redesign\n\nWe are excited to propose a comprehensive redesign of your brand identity. This will help you establish a strong market presence and connect better with your audience. \n\n### Deliverables\n- Logo Source Files\n- Brand Book (PDF)\n- Social Media Templates\n\n### Investment\nThe total investment for this project will be ₹85,000."
+  },
+  {
+    id: "PROP-2024-02",
+    title: "E-Commerce App UI/UX",
+    clientId: "c2",
+    clientName: "Nexus Dynamics",
+    status: "Accepted",
+    budget: 120000,
+    createdAt: "2026-05-15",
+    scopeOfWork: "End-to-end user experience and interface design for the new mobile app.",
+    deliverables: ["Figma Prototypes", "Design System", "User Testing Report"],
+    duration: "6 weeks",
+    tone: "Modern and tech-focused",
+    content: "## E-Commerce App UI/UX Design\n\nTo ensure your new app stands out in the crowded market, we will create a cutting-edge user experience.\n\n### Deliverables\n- Figma Prototypes\n- Design System\n- User Testing Report\n\n### Investment\nThe total investment for this project will be ₹1,20,000."
+  }
+];
+
 const DEFAULT_TASKS: Task[] = [
   {
     id: "t1",
@@ -425,6 +471,7 @@ export function initDb(force = false) {
     setStorageItem("invoicehq_clients", DEFAULT_CLIENTS);
     setStorageItem("invoicehq_invoices", DEFAULT_INVOICES);
     setStorageItem("invoicehq_deals", DEFAULT_DEALS);
+    setStorageItem("invoicehq_proposals", DEFAULT_PROPOSALS);
     setStorageItem("invoicehq_tasks", DEFAULT_TASKS);
     setStorageItem("invoicehq_logs", DEFAULT_LOGS);
     localStorage.setItem("invoicehq_initialized", "true");
@@ -442,6 +489,47 @@ export const mockDb = {
     initDb();
     setStorageItem("invoicehq_settings", settings);
     return settings;
+  },
+
+  // Proposals
+  getProposals(): Proposal[] {
+    initDb();
+    return getStorageItem("invoicehq_proposals", DEFAULT_PROPOSALS);
+  },
+  saveProposals(proposals: Proposal[]): void {
+    setStorageItem("invoicehq_proposals", proposals);
+  },
+  addProposal(proposal: Omit<Proposal, "id" | "createdAt" | "status">): Proposal {
+    initDb();
+    const proposals = this.getProposals();
+    const newProposal: Proposal = {
+      ...proposal,
+      id: "PROP-" + new Date().getFullYear() + "-" + String(proposals.length + 1).padStart(3, '0'),
+      createdAt: new Date().toISOString().split("T")[0],
+      status: "Draft"
+    };
+    proposals.push(newProposal);
+    this.saveProposals(proposals);
+    this.addLog("proposal_generated", `Generated new proposal '${proposal.title}' for ${proposal.clientName}.`);
+    return newProposal;
+  },
+  updateProposalStatus(proposalId: string, status: Proposal["status"]): Proposal | null {
+    initDb();
+    const proposals = this.getProposals();
+    const index = proposals.findIndex(p => p.id === proposalId);
+    if (index === -1) return null;
+    proposals[index].status = status;
+    this.saveProposals(proposals);
+    return proposals[index];
+  },
+  updateProposal(proposalId: string, updates: Partial<Proposal>): Proposal | null {
+    initDb();
+    const proposals = this.getProposals();
+    const index = proposals.findIndex(p => p.id === proposalId);
+    if (index === -1) return null;
+    proposals[index] = { ...proposals[index], ...updates };
+    this.saveProposals(proposals);
+    return proposals[index];
   },
 
   // Clients

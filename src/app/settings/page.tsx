@@ -1,723 +1,542 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import WorkspaceLayout from "@/components/WorkspaceLayout";
-import { mockDb, WorkspaceSettings } from "@/lib/mockDb";
 import {
   Building2,
-  Mail,
-  Globe,
-  CheckCircle,
-  Sun,
-  Moon,
-  Palette,
   Receipt,
-  Shield,
-  Save,
-  Settings2,
-  Sparkles,
   CreditCard,
-  ToggleLeft,
-  ToggleRight,
-  Info,
-  Copy,
-  ChevronRight,
+  Bell,
+  Globe,
+  Calculator,
+  MessageSquare,
+  Package,
+  Save,
+  CheckCircle2,
+  Upload
 } from "lucide-react";
 
-const TABS = [
-  { id: "workspace", label: "Workspace", icon: Building2 },
-  { id: "appearance", label: "Appearance", icon: Palette },
-  { id: "gst", label: "Tax & GST", icon: Receipt },
-  { id: "billing", label: "Billing Plan", icon: CreditCard },
-];
-
-const colorTokens = [
-  {
-    name: "--color-brand-primary",
-    desc: "Hero selections, active rings, CTA buttons",
-    light: "#6366F1",
-    dark: "#818CF8",
-    lightLabel: "Indigo 500",
-    darkLabel: "Indigo 400",
-  },
-  {
-    name: "--color-surface-bg",
-    desc: "Main canvas platform backdrop",
-    light: "#F8FAFC",
-    dark: "#0F172A",
-    lightLabel: "Slate 50",
-    darkLabel: "Slate 900",
-  },
-  {
-    name: "--color-surface-card",
-    desc: "Bento widgets, data rows, modals",
-    light: "#FFFFFF",
-    dark: "#1E293B",
-    lightLabel: "White",
-    darkLabel: "Slate 800",
-  },
-  {
-    name: "--color-border-line",
-    desc: "High density data grids and dividers",
-    light: "#E2E8F0",
-    dark: "#334155",
-    lightLabel: "Slate 200",
-    darkLabel: "Slate 700",
-  },
-  {
-    name: "--color-text-main",
-    desc: "Clear headings, labels, core metrics",
-    light: "#0F172A",
-    dark: "#F8FAFC",
-    lightLabel: "Slate 900",
-    darkLabel: "Slate 50",
-  },
-  {
-    name: "--color-text-muted",
-    desc: "Supporting descriptions, metadata",
-    light: "#64748B",
-    dark: "#94A3B8",
-    lightLabel: "Slate 500",
-    darkLabel: "Slate 400",
-  },
-  {
-    name: "--color-state-success",
-    desc: "Paid invoices, approved milestones",
-    light: "#10B981",
-    dark: "#34D399",
-    lightLabel: "Emerald 500",
-    darkLabel: "Emerald 400",
-  },
-  {
-    name: "--color-state-danger",
-    desc: "Overdue alerts, error flags",
-    light: "#EF4444",
-    dark: "#F87171",
-    lightLabel: "Red 500",
-    darkLabel: "Red 400",
-  },
-  {
-    name: "--color-state-warning",
-    desc: "Pending states, caution indicators",
-    light: "#F59E0B",
-    dark: "#FBBF24",
-    lightLabel: "Amber 500",
-    darkLabel: "Amber 400",
-  },
-];
-
-const gstSlabs = [
-  { rate: "0%", category: "Exempt Services", example: "Healthcare, Education" },
-  {
-    rate: "5%",
-    category: "Essential Services",
-    example: "Basic food, transport",
-  },
-  {
-    rate: "12%",
-    category: "Standard Services",
-    example: "Hospitality, software",
-  },
-  {
-    rate: "18%",
-    category: "Professional Services",
-    example: "IT/Design consulting, SaaS",
-  },
-  {
-    rate: "28%",
-    category: "Luxury / Premium",
-    example: "Premium entertainment",
-  },
-];
-
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("workspace");
+  const [activeTab, setActiveTab] = useState("business");
+  const [toast, setToast] = useState<string | null>(null);
 
-  const [companyName, setCompanyName] = useState("");
-  const [email, setEmail] = useState("");
-  const [gstin, setGstin] = useState("");
-  const [placeOfSupply, setPlaceOfSupply] = useState("");
-  const [baseCurrency, setBaseCurrency] = useState("INR");
-  const [autoGst, setAutoGst] = useState(true);
-  const [defaultGstRate, setDefaultGstRate] = useState("18");
+  const tabs = [
+    { id: "business", label: "Business Profile", icon: Building2 },
+    { id: "invoice", label: "Invoice Preferences", icon: Receipt },
+    { id: "payment", label: "Payment Methods", icon: CreditCard },
+    { id: "reminders", label: "Reminder Automation", icon: Bell },
+    { id: "portal", label: "Client Portal", icon: Globe },
+    { id: "taxes", label: "Taxes & GST", icon: Calculator },
+    { id: "notifications", label: "Notifications", icon: MessageSquare },
+    { id: "billing", label: "Plan & Billing", icon: Package },
+  ];
 
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [copiedToken, setCopiedToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    const settings = mockDb.getSettings();
-    setCompanyName(settings.companyName);
-    setEmail(settings.email);
-    setGstin(settings.gstin);
-    setPlaceOfSupply(settings.placeOfSupply);
-    setBaseCurrency(settings.baseCurrency);
-  }, []);
-
-  const triggerToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 3500);
-  };
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!companyName || !gstin || !email) {
-      alert("Please fill in company details, email, and GSTIN.");
-      return;
-    }
-
-    const payload: WorkspaceSettings = {
-      companyName,
-      email,
-      gstin,
-      placeOfSupply,
-      baseCurrency,
-    };
-
-    mockDb.updateSettings(payload);
-    triggerToast("Workspace configurations saved successfully!");
-    window.dispatchEvent(new Event("invoicehq_db_update"));
-  };
-
-  const handleCopyToken = (name: string) => {
-    navigator.clipboard.writeText(`var(${name})`).catch(() => {});
-    setCopiedToken(name);
-    setTimeout(() => setCopiedToken(null), 1500);
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
   };
 
   return (
     <ProtectedRoute>
-      <WorkspaceLayout
-        title="Settings"
-        subtitle="Configure workspace variables and regional GST parameters"
-      >
-        {/* Toast Alert */}
-        {toastMsg && (
-          <div className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-brand-primary/30 text-xs font-semibold flex items-center gap-2.5 animate-in slide-in-from-bottom-5 duration-200">
-            <CheckCircle size={14} className="text-state-success shrink-0" />
-            <span>{toastMsg}</span>
+      <WorkspaceLayout title="Settings" subtitle="Manage your workspace preferences">
+        {/* Toast */}
+        {toast && (
+          <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-2">
+            <div className="bg-emerald-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 font-medium text-sm">
+              <CheckCircle2 size={18} />
+              {toast}
+            </div>
           </div>
         )}
 
-        {/* Header Banner */}
-        <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-brand-primary/10 via-brand-primary/5 to-transparent border border-brand-primary/15 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-brand-primary flex items-center justify-center text-white shadow-lg shadow-brand-primary/30 shrink-0">
-            <Settings2 size={22} />
+        <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto">
+          {/* Settings Sidebar */}
+          <div className="w-full md:w-64 flex-shrink-0">
+            <nav className="space-y-1 bg-surface-card p-2 rounded-2xl border border-border-divider shadow-sm sticky top-24">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                      isActive
+                        ? "bg-brand-primary-light text-brand-primary"
+                        : "text-text-muted hover:text-text-main hover:bg-surface-elevated"
+                    }`}
+                  >
+                    <Icon size={18} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
-          <div>
-            <h2 className="text-sm font-bold text-text-main">
-              Workspace Preferences
-            </h2>
-            <p className="text-xs text-text-muted mt-0.5">
-              Manage your company identity, design tokens, GST configuration,
-              and billing plan.
-            </p>
-          </div>
-          <div className="ml-auto hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-[10px] font-bold">
-            <Sparkles size={11} />
-            Pro Workspace
-          </div>
-        </div>
 
-        <div className="flex flex-col lg:flex-row gap-6 items-start">
-          {/* Tab Sidebar */}
-          <nav className="w-full lg:w-52 shrink-0 bg-surface-card border border-border-line rounded-2xl p-2 shadow-sm">
-            <p className="text-[9px] font-bold text-text-muted uppercase tracking-widest px-3 py-2">
-              Configuration
-            </p>
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all text-left mb-0.5 ${
-                    isActive
-                      ? "bg-brand-primary-light text-brand-primary border border-brand-primary/15"
-                      : "text-text-muted hover:text-text-main hover:bg-surface-bg border border-transparent"
-                  }`}
-                >
-                  <Icon
-                    size={15}
-                    className={isActive ? "text-brand-primary" : ""}
-                  />
-                  <span>{tab.label}</span>
-                  {isActive && <ChevronRight size={12} className="ml-auto" />}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Tab Content Area */}
-          <div className="flex-1 min-w-0 space-y-6">
-            {/* ── WORKSPACE TAB ── */}
-            {activeTab === "workspace" && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                <div className="bg-surface-card border border-border-line rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center gap-2.5 pb-4 border-b border-border-line mb-6">
-                    <Building2 className="text-brand-primary" size={17} />
-                    <h3 className="text-sm font-bold text-text-main">
-                      Company Identity
-                    </h3>
-                  </div>
-
-                  <form onSubmit={handleSave} className="space-y-5">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      <div>
-                        <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
-                          Company Name (Owner)
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={companyName}
-                          onChange={(e) => setCompanyName(e.target.value)}
-                          placeholder="e.g. ARK Design Studio"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-surface-bg border border-border-line text-xs text-text-main outline-none focus:border-brand-primary transition-colors"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
-                          Billing Email
-                        </label>
-                        <div className="relative">
-                          <Mail
-                            size={13}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-                          />
-                          <input
-                            type="email"
-                            required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="billing@yourstudio.in"
-                            className="w-full pl-8 pr-3.5 py-2.5 rounded-xl bg-surface-bg border border-border-line text-xs text-text-main outline-none focus:border-brand-primary transition-colors"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                      <div>
-                        <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
-                          Owner GSTIN
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          maxLength={15}
-                          value={gstin}
-                          onChange={(e) =>
-                            setGstin(e.target.value.toUpperCase())
-                          }
-                          placeholder="27AAPFW0939F1ZV"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-surface-bg border border-border-line text-xs text-text-main outline-none focus:border-brand-primary uppercase tabular-nums transition-colors"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
-                          Place of Supply
-                        </label>
-                        <div className="relative">
-                          <Globe
-                            size={13}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-                          />
-                          <input
-                            type="text"
-                            value={placeOfSupply}
-                            onChange={(e) => setPlaceOfSupply(e.target.value)}
-                            placeholder="e.g. Maharashtra"
-                            className="w-full pl-8 pr-3.5 py-2.5 rounded-xl bg-surface-bg border border-border-line text-xs text-text-main outline-none focus:border-brand-primary transition-colors"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
-                          Base Currency
-                        </label>
-                        <select
-                          value={baseCurrency}
-                          onChange={(e) => setBaseCurrency(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-surface-bg border border-border-line text-xs text-text-main outline-none focus:border-brand-primary transition-colors"
-                        >
-                          <option value="INR">₹ INR – Indian Rupee</option>
-                          <option value="USD">$ USD – US Dollar</option>
-                          <option value="EUR">€ EUR – Euro</option>
-                          <option value="GBP">£ GBP – British Pound</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-border-line flex items-center justify-between">
-                      <p className="text-[10px] text-text-muted flex items-center gap-1">
-                        <Info size={11} />
-                        Changes reflect on all new invoices and proposals
-                      </p>
-                      <button
-                        type="submit"
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold transition-all focus-ring-indigo shadow-md shadow-brand-primary/20 cursor-pointer"
-                      >
-                        <Save size={13} />
-                        Save Changes
-                      </button>
-                    </div>
-                  </form>
-                </div>
-
-                {/* Quick Info Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {[
-                    {
-                      label: "Plan",
-                      value: "Pro Workspace",
-                      icon: Sparkles,
-                      color: "text-brand-primary",
-                    },
-                    {
-                      label: "Currency",
-                      value: baseCurrency || "INR",
-                      icon: CreditCard,
-                      color: "text-state-success",
-                    },
-                    {
-                      label: "Supply State",
-                      value: placeOfSupply || "—",
-                      icon: Globe,
-                      color: "text-state-warning",
-                    },
-                    {
-                      label: "GSTIN Status",
-                      value: gstin ? "Active" : "Not Set",
-                      icon: Shield,
-                      color: gstin ? "text-state-success" : "text-state-danger",
-                    },
-                  ].map((card) => {
-                    const Icon = card.icon;
-                    return (
-                      <div
-                        key={card.label}
-                        className="bg-surface-card border border-border-line rounded-2xl p-4 shadow-sm"
-                      >
-                        <Icon size={16} className={`${card.color} mb-2`} />
-                        <p className="text-[9px] font-bold text-text-muted uppercase tracking-wider">
-                          {card.label}
-                        </p>
-                        <p className="text-xs font-bold text-text-main mt-0.5 truncate">
-                          {card.value}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* ── APPEARANCE TAB ── */}
-            {activeTab === "appearance" && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                <div className="bg-surface-card border border-border-line rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center gap-2.5 pb-4 border-b border-border-line mb-6">
-                    <Palette className="text-brand-primary" size={17} />
-                    <h3 className="text-sm font-bold text-text-main">
-                      Design Token Tree
-                    </h3>
-                    <span className="ml-auto text-[9px] font-bold bg-brand-primary/10 text-brand-primary px-2.5 py-1 rounded-full uppercase tracking-wider">
-                      CSS Variables
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-text-muted mb-5 leading-relaxed">
-                    These CSS custom properties define the entire visual
-                    language of InvoiceHQ. They cascade through both light and
-                    dark themes automatically.
-                  </p>
-
-                  <div className="space-y-3">
-                    {colorTokens.map((tok) => (
-                      <div
-                        key={tok.name}
-                        className="p-4 bg-surface-bg border border-border-line rounded-xl group hover:border-brand-primary/30 transition-colors"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-[10px] font-bold text-text-main font-mono">
-                                {tok.name}
-                              </span>
-                              <button
-                                onClick={() => handleCopyToken(tok.name)}
-                                className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-text-muted hover:text-brand-primary transition-all"
-                                title="Copy CSS variable"
-                              >
-                                {copiedToken === tok.name ? (
-                                  <CheckCircle
-                                    size={11}
-                                    className="text-state-success"
-                                  />
-                                ) : (
-                                  <Copy size={11} />
-                                )}
-                              </button>
-                            </div>
-                            <p className="text-[9px] text-text-muted leading-tight mb-2">
-                              {tok.desc}
-                            </p>
-                            <div className="flex items-center gap-4 text-[9px] font-medium">
-                              <div className="flex items-center gap-1.5">
-                                <div
-                                  className="w-3 h-3 rounded-full border border-border-line shadow-sm"
-                                  style={{ backgroundColor: tok.light }}
-                                />
-                                <Sun size={8} className="text-state-warning" />
-                                <span className="text-text-main font-mono">
-                                  {tok.light}
-                                </span>
-                                <span className="text-text-muted">
-                                  {tok.lightLabel}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <div
-                                  className="w-3 h-3 rounded-full border border-border-line shadow-sm"
-                                  style={{ backgroundColor: tok.dark }}
-                                />
-                                <Moon size={8} className="text-brand-primary" />
-                                <span className="text-text-main font-mono">
-                                  {tok.dark}
-                                </span>
-                                <span className="text-text-muted">
-                                  {tok.darkLabel}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Color swatches side by side */}
-                          <div className="flex gap-1 shrink-0">
-                            <div
-                              className="w-8 h-8 rounded-lg border border-border-line shadow-sm"
-                              style={{ backgroundColor: tok.light }}
-                              title={`Light: ${tok.light}`}
-                            />
-                            <div
-                              className="w-8 h-8 rounded-lg border border-border-line shadow-sm"
-                              style={{ backgroundColor: tok.dark }}
-                              title={`Dark: ${tok.dark}`}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── GST TAB ── */}
-            {activeTab === "gst" && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                {/* GST Configuration Card */}
-                <div className="bg-surface-card border border-border-line rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center gap-2.5 pb-4 border-b border-border-line mb-6">
-                    <Receipt className="text-brand-primary" size={17} />
-                    <h3 className="text-sm font-bold text-text-main">
-                      GST Configuration
-                    </h3>
-                  </div>
-
-                  <div className="space-y-5">
-                    {/* Auto GST toggle */}
-                    <div className="flex items-center justify-between p-4 bg-surface-bg rounded-xl border border-border-line">
-                      <div>
-                        <p className="text-xs font-bold text-text-main">
-                          Auto-apply GST on Invoices
-                        </p>
-                        <p className="text-[10px] text-text-muted mt-0.5">
-                          Automatically calculate and append GST breakdown on
-                          all new invoices
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setAutoGst(!autoGst)}
-                        className="shrink-0 transition-colors"
-                      >
-                        {autoGst ? (
-                          <ToggleRight
-                            size={28}
-                            className="text-brand-primary"
-                          />
-                        ) : (
-                          <ToggleLeft size={28} className="text-text-muted" />
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Default GST rate */}
-                    <div>
-                      <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
-                        Default GST Rate
-                      </label>
-                      <div className="flex gap-2 flex-wrap">
-                        {["0", "5", "12", "18", "28"].map((rate) => (
-                          <button
-                            key={rate}
-                            onClick={() => setDefaultGstRate(rate)}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
-                              defaultGstRate === rate
-                                ? "bg-brand-primary text-white border-brand-primary shadow-md shadow-brand-primary/20"
-                                : "bg-surface-bg text-text-muted border-border-line hover:border-brand-primary/40 hover:text-text-main"
-                            }`}
-                          >
-                            {rate}%
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* GST Slab Reference Table */}
-                <div className="bg-surface-card border border-border-line rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center gap-2.5 pb-4 border-b border-border-line mb-4">
-                    <Shield className="text-brand-primary" size={17} />
-                    <h3 className="text-sm font-bold text-text-main">
-                      GST Slab Reference
-                    </h3>
-                    <span className="ml-auto text-[9px] font-bold bg-surface-bg text-text-muted px-2 py-1 rounded-full border border-border-line uppercase tracking-wider">
-                      India GST Act
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {gstSlabs.map((slab) => (
-                      <div
-                        key={slab.rate}
-                        className={`flex items-center gap-4 p-3.5 rounded-xl border transition-colors ${
-                          defaultGstRate === slab.rate.replace("%", "")
-                            ? "bg-brand-primary-light border-brand-primary/20"
-                            : "bg-surface-bg border-border-line"
-                        }`}
-                      >
-                        <span
-                          className={`text-sm font-black tabular-nums w-10 shrink-0 ${
-                            defaultGstRate === slab.rate.replace("%", "")
-                              ? "text-brand-primary"
-                              : "text-text-main"
-                          }`}
-                        >
-                          {slab.rate}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-text-main">
-                            {slab.category}
-                          </p>
-                          <p className="text-[10px] text-text-muted mt-0.5">
-                            {slab.example}
-                          </p>
-                        </div>
-                        {defaultGstRate === slab.rate.replace("%", "") && (
-                          <CheckCircle
-                            size={14}
-                            className="text-brand-primary ml-auto shrink-0"
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── BILLING TAB ── */}
-            {activeTab === "billing" && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                {/* Current Plan Card */}
-                <div className="relative overflow-hidden bg-gradient-to-br from-brand-primary to-indigo-700 rounded-2xl p-6 text-white shadow-xl shadow-brand-primary/25">
-                  <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-16 translate-x-16" />
-                  <div className="absolute bottom-0 left-0 w-28 h-28 rounded-full bg-white/5 translate-y-10 -translate-x-10" />
-                  <div className="relative">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Sparkles size={16} className="text-white/80" />
-                      <span className="text-xs font-bold uppercase tracking-widest text-white/80">
-                        Current Plan
-                      </span>
-                    </div>
-                    <h3 className="text-2xl font-black mb-1">Pro Workspace</h3>
-                    <p className="text-sm text-white/70 mb-5">
-                      Full access · Unlimited invoices · GST automation
-                    </p>
-                    <div className="flex items-end gap-1">
-                      <span className="text-3xl font-black">₹999</span>
-                      <span className="text-sm text-white/70 mb-1">/month</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Feature Matrix */}
-                <div className="bg-surface-card border border-border-line rounded-2xl p-6 shadow-sm">
-                  <h3 className="text-sm font-bold text-text-main mb-5">
-                    Plan Features
-                  </h3>
-                  <div className="space-y-3">
-                    {[
-                      { feature: "Unlimited Invoices", included: true },
-                      { feature: "GST Auto-calculation", included: true },
-                      { feature: "AI Proposal Generation", included: true },
-                      { feature: "Sales Pipeline (CRM)", included: true },
-                      { feature: "Client Portal Links", included: true },
-                      { feature: "Multi-currency Support", included: true },
-                      { feature: "White-label Branding", included: false },
-                      {
-                        feature: "Team Collaboration (5 seats)",
-                        included: false,
-                      },
-                      { feature: "API Access & Webhooks", included: false },
-                    ].map((item) => (
-                      <div
-                        key={item.feature}
-                        className="flex items-center gap-3"
-                      >
-                        <div
-                          className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${
-                            item.included
-                              ? "bg-state-success/15"
-                              : "bg-surface-bg border border-border-line"
-                          }`}
-                        >
-                          {item.included && (
-                            <CheckCircle
-                              size={10}
-                              className="text-state-success"
-                            />
-                          )}
-                        </div>
-                        <span
-                          className={`text-xs font-semibold ${
-                            item.included
-                              ? "text-text-main"
-                              : "text-text-muted line-through"
-                          }`}
-                        >
-                          {item.feature}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-5 pt-4 border-t border-border-line">
-                    <button className="w-full py-2.5 rounded-xl border border-brand-primary text-brand-primary text-xs font-bold hover:bg-brand-primary hover:text-white transition-all">
-                      Upgrade to Enterprise →
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+          {/* Settings Content */}
+          <div className="flex-1 animate-in fade-in duration-300">
+            {activeTab === "business" && <BusinessProfile onSave={() => showToast("Business profile updated!")} />}
+            {activeTab === "invoice" && <InvoicePreferences onSave={() => showToast("Invoice preferences saved!")} />}
+            {activeTab === "payment" && <PaymentMethods onSave={() => showToast("Payment methods updated!")} />}
+            {activeTab === "reminders" && <ReminderAutomation onSave={() => showToast("Automation rules saved!")} />}
+            {activeTab === "portal" && <ClientPortal onSave={() => showToast("Portal settings updated!")} />}
+            {activeTab === "taxes" && <TaxesGST onSave={() => showToast("Tax configuration saved!")} />}
+            {activeTab === "notifications" && <Notifications onSave={() => showToast("Notification preferences updated!")} />}
+            {activeTab === "billing" && <PlanBilling />}
           </div>
         </div>
       </WorkspaceLayout>
     </ProtectedRoute>
+  );
+}
+
+// ----------------------------------------------------
+// Sub-components
+// ----------------------------------------------------
+
+function BusinessProfile({ onSave }: { onSave: () => void }) {
+  return (
+    <div className="bg-surface-card border border-border-divider rounded-2xl p-6 md:p-8 shadow-sm">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-xl font-bold text-text-main">Business Profile</h2>
+          <p className="text-sm text-text-muted mt-1">Manage your company information and contact details.</p>
+        </div>
+        <button onClick={onSave} className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-brand-dark rounded-xl text-sm font-medium hover:bg-brand-primary/90 transition-all">
+          <Save size={16} /> Save Changes
+        </button>
+      </div>
+
+      <div className="space-y-6">
+        <div className="flex items-center gap-6">
+          <div className="w-24 h-24 rounded-2xl bg-surface-elevated border-2 border-dashed border-border-divider flex flex-col items-center justify-center text-text-muted cursor-pointer hover:border-brand-primary hover:text-brand-primary transition-colors">
+            <Upload size={24} className="mb-1" />
+            <span className="text-xs font-medium">Logo</span>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-text-main mb-1">Company Logo</h4>
+            <p className="text-xs text-text-muted mb-3">Recommended size: 512x512px (PNG, JPG).</p>
+            <button className="text-sm font-medium text-brand-primary bg-brand-primary-light px-3 py-1.5 rounded-lg hover:bg-brand-primary/20 transition-colors">Upload Image</button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <InputGroup label="Business Name" defaultValue="ARK Design Studio" />
+          <InputGroup label="Owner Name" defaultValue="Arjun Kumar" />
+          <InputGroup label="Email Address" defaultValue="hello@arkdesign.in" />
+          <InputGroup label="Phone Number" defaultValue="+91 98765 43210" />
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-text-main mb-1.5">Registered Address</label>
+            <textarea className="w-full bg-surface-elevated border border-border-divider rounded-xl px-4 py-2 text-sm focus:border-brand-primary outline-none transition-colors h-24 resize-none">123, Creative Enclave, Andheri West, Mumbai, Maharashtra 400053</textarea>
+          </div>
+          <InputGroup label="GSTIN (Optional)" defaultValue="27AAARK1234B1ZP" />
+          <InputGroup label="PAN (Optional)" defaultValue="AAARK1234B" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InvoicePreferences({ onSave }: { onSave: () => void }) {
+  return (
+    <div className="bg-surface-card border border-border-divider rounded-2xl p-6 md:p-8 shadow-sm">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-xl font-bold text-text-main">Invoice Preferences</h2>
+          <p className="text-sm text-text-muted mt-1">Configure default settings for new invoices.</p>
+        </div>
+        <button onClick={onSave} className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-brand-dark rounded-xl text-sm font-medium hover:bg-brand-primary/90 transition-all">
+          <Save size={16} /> Save Changes
+        </button>
+      </div>
+
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-text-main mb-1.5">Invoice Number Format</label>
+            <div className="flex gap-2">
+              <input type="text" defaultValue="INV-2024-" className="w-1/2 bg-surface-elevated border border-border-divider rounded-xl px-4 py-2 text-sm focus:border-brand-primary outline-none" placeholder="Prefix" />
+              <input type="text" defaultValue="001" disabled className="w-1/2 bg-surface-bg border border-border-divider rounded-xl px-4 py-2 text-sm opacity-60" />
+            </div>
+            <p className="text-xs text-text-muted mt-1.5">Preview: INV-2024-001</p>
+          </div>
+          
+          <SelectGroup label="Default Currency" options={["INR (₹)", "USD ($)", "EUR (€)", "GBP (£)"]} />
+          <SelectGroup label="Default Payment Terms" options={["Due on Receipt", "Net 7", "Net 14", "Net 30"]} />
+          <InputGroup label="Default Due Date Offset (Days)" type="number" defaultValue="14" />
+          <InputGroup label="Late Fee Percentage (%)" type="number" defaultValue="2" />
+          
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-text-main mb-1.5">Default Notes / Footer Text</label>
+            <textarea className="w-full bg-surface-elevated border border-border-divider rounded-xl px-4 py-2 text-sm focus:border-brand-primary outline-none transition-colors h-24 resize-none">Payment is due within 14 days. A late fee of 2% per month will be applied to overdue balances. Thank you for your business!</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PaymentMethods({ onSave }: { onSave: () => void }) {
+  return (
+    <div className="bg-surface-card border border-border-divider rounded-2xl p-6 md:p-8 shadow-sm">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-xl font-bold text-text-main">Payment Methods</h2>
+          <p className="text-sm text-text-muted mt-1">Set up how clients can pay your invoices.</p>
+        </div>
+        <button onClick={onSave} className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-brand-dark rounded-xl text-sm font-medium hover:bg-brand-primary/90 transition-all">
+          <Save size={16} /> Save Changes
+        </button>
+      </div>
+
+      <div className="space-y-8">
+        <div>
+          <h3 className="text-base font-semibold text-text-main flex items-center justify-between mb-4">
+            UPI / QR Code
+            <Toggle defaultChecked={true} label="Show UPI QR on Invoice" />
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputGroup label="UPI ID" defaultValue="arkdesign@okicici" />
+            <InputGroup label="Merchant Name" defaultValue="ARK Design Studio" />
+          </div>
+        </div>
+
+        <hr className="border-border-divider" />
+
+        <div>
+          <h3 className="text-base font-semibold text-text-main mb-4">Bank Transfer Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputGroup label="Account Name" defaultValue="ARK Design Solutions Pvt Ltd" />
+            <InputGroup label="Bank Name" defaultValue="HDFC Bank" />
+            <InputGroup label="Account Number" defaultValue="50200012345678" />
+            <InputGroup label="IFSC Code" defaultValue="HDFC0001234" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReminderAutomation({ onSave }: { onSave: () => void }) {
+  return (
+    <div className="bg-surface-card border border-border-divider rounded-2xl p-6 md:p-8 shadow-sm">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-xl font-bold text-text-main flex items-center gap-3">
+            Reminder Automation
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-primary/10 text-brand-primary uppercase">Pro Feature</span>
+          </h2>
+          <p className="text-sm text-text-muted mt-1">Automatically chase unpaid invoices so you don't have to.</p>
+        </div>
+        <button onClick={onSave} className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-brand-dark rounded-xl text-sm font-medium hover:bg-brand-primary/90 transition-all">
+          <Save size={16} /> Save Rules
+        </button>
+      </div>
+
+      <div className="p-4 bg-brand-primary-light border border-brand-primary/20 rounded-xl mb-8 flex justify-between items-center">
+        <div>
+          <h4 className="font-semibold text-brand-primary text-sm">Master Toggle</h4>
+          <p className="text-xs text-text-muted mt-0.5">Enable or disable all automated reminders.</p>
+        </div>
+        <Toggle defaultChecked={true} />
+      </div>
+
+      <div className="space-y-6">
+        {/* Rule 1 */}
+        <div className="border border-border-divider rounded-xl p-4 bg-surface-elevated">
+          <div className="flex justify-between items-center mb-3">
+            <h4 className="font-medium text-sm text-text-main">1. Friendly Reminder</h4>
+            <Toggle defaultChecked={true} />
+          </div>
+          <div className="flex items-center gap-2 mb-3 text-sm">
+            <span>Send</span>
+            <input type="number" defaultValue="3" className="w-16 bg-surface-bg border border-border-divider rounded-lg px-2 py-1 text-center focus:border-brand-primary outline-none" />
+            <span>days</span>
+            <select className="bg-surface-bg border border-border-divider rounded-lg px-2 py-1 focus:border-brand-primary outline-none">
+              <option>Before Due Date</option>
+              <option>After Due Date</option>
+            </select>
+          </div>
+          <textarea className="w-full bg-surface-bg border border-border-divider rounded-lg px-3 py-2 text-sm focus:border-brand-primary outline-none resize-none h-20">Hi [Client Name], just a friendly reminder that invoice [Invoice No] for [Amount] is due on [Due Date]. Thank you!</textarea>
+        </div>
+
+        {/* Rule 2 */}
+        <div className="border border-border-divider rounded-xl p-4 bg-surface-elevated">
+          <div className="flex justify-between items-center mb-3">
+            <h4 className="font-medium text-sm text-text-main">2. Firm Reminder</h4>
+            <Toggle defaultChecked={true} />
+          </div>
+          <div className="flex items-center gap-2 mb-3 text-sm">
+            <span>Send</span>
+            <input type="number" defaultValue="5" className="w-16 bg-surface-bg border border-border-divider rounded-lg px-2 py-1 text-center focus:border-brand-primary outline-none" />
+            <span>days</span>
+            <select className="bg-surface-bg border border-border-divider rounded-lg px-2 py-1 focus:border-brand-primary outline-none">
+              <option>After Due Date</option>
+            </select>
+          </div>
+          <textarea className="w-full bg-surface-bg border border-border-divider rounded-lg px-3 py-2 text-sm focus:border-brand-primary outline-none resize-none h-20">Dear [Client Name], invoice [Invoice No] is now 5 days overdue. Please process the payment of [Amount] at your earliest convenience to avoid late fees.</textarea>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ClientPortal({ onSave }: { onSave: () => void }) {
+  return (
+    <div className="bg-surface-card border border-border-divider rounded-2xl p-6 md:p-8 shadow-sm">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-xl font-bold text-text-main">Client Portal</h2>
+          <p className="text-sm text-text-muted mt-1">Customize the portal where your clients view and pay invoices.</p>
+        </div>
+        <button onClick={onSave} className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-brand-dark rounded-xl text-sm font-medium hover:bg-brand-primary/90 transition-all">
+          <Save size={16} /> Save Changes
+        </button>
+      </div>
+
+      <div className="space-y-6">
+        <InputGroup label="Custom Subdomain" defaultValue="arkdesign" suffix=".invoicehq.in" />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <InputGroup label="Portal Brand Color (Hex)" defaultValue="#10B981" />
+          <SelectGroup label="Portal Font" options={["Inter", "Roboto", "Outfit", "Plus Jakarta Sans"]} />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-text-main mb-1.5">Welcome Message</label>
+          <textarea className="w-full bg-surface-elevated border border-border-divider rounded-xl px-4 py-2 text-sm focus:border-brand-primary outline-none transition-colors h-20 resize-none">Welcome to your billing portal! Here you can view, download, and pay your invoices.</textarea>
+        </div>
+
+        <div className="space-y-4 pt-4 border-t border-border-divider">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-medium">Enable Online Payments (Stripe/Razorpay)</h4>
+              <p className="text-xs text-text-muted">Allow clients to pay directly via the portal.</p>
+            </div>
+            <Toggle defaultChecked={false} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-medium">Show Tax Breakdown</h4>
+              <p className="text-xs text-text-muted">Display a detailed breakdown of taxes on the public invoice.</p>
+            </div>
+            <Toggle defaultChecked={true} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TaxesGST({ onSave }: { onSave: () => void }) {
+  return (
+    <div className="bg-surface-card border border-border-divider rounded-2xl p-6 md:p-8 shadow-sm">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-xl font-bold text-text-main">Taxes & GST</h2>
+          <p className="text-sm text-text-muted mt-1">Configure your local tax rules.</p>
+        </div>
+        <button onClick={onSave} className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-brand-dark rounded-xl text-sm font-medium hover:bg-brand-primary/90 transition-all">
+          <Save size={16} /> Save Changes
+        </button>
+      </div>
+
+      <div className="space-y-6">
+        <div className="flex items-center justify-between p-4 bg-surface-elevated border border-border-divider rounded-xl">
+          <div>
+            <h4 className="font-medium text-sm">GST Registered?</h4>
+            <p className="text-xs text-text-muted">Toggle off if you are an unregistered freelancer.</p>
+          </div>
+          <Toggle defaultChecked={true} />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <SelectGroup label="Default GST Rate (%)" options={["0", "5", "12", "18", "28"]} defaultValue="18" />
+          <SelectGroup label="Place of Supply (Home State)" options={["Maharashtra", "Karnataka", "Delhi", "Tamil Nadu"]} defaultValue="Maharashtra" />
+          <InputGroup label="Default SAC / HSN Code" defaultValue="998311" />
+        </div>
+
+        <div className="p-4 bg-brand-primary-light/50 border border-brand-primary/20 rounded-xl mt-4">
+          <h4 className="font-medium text-sm text-brand-primary mb-1">Smart Tax Routing</h4>
+          <p className="text-xs text-text-main opacity-80">
+            InvoiceHQ will automatically calculate CGST + SGST for clients in your home state, and IGST for inter-state clients based on their GSTIN/Address.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Notifications({ onSave }: { onSave: () => void }) {
+  return (
+    <div className="bg-surface-card border border-border-divider rounded-2xl p-6 md:p-8 shadow-sm">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-xl font-bold text-text-main">Notifications</h2>
+          <p className="text-sm text-text-muted mt-1">Control how you want to be alerted.</p>
+        </div>
+        <button onClick={onSave} className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-brand-dark rounded-xl text-sm font-medium hover:bg-brand-primary/90 transition-all">
+          <Save size={16} /> Save Changes
+        </button>
+      </div>
+
+      <div className="space-y-8">
+        <div>
+          <h3 className="text-base font-semibold mb-4 border-b border-border-divider pb-2">Email Notifications</h3>
+          <div className="space-y-4">
+            <NotificationToggle label="Invoice Viewed by Client" defaultChecked={true} />
+            <NotificationToggle label="Payment Received" defaultChecked={true} />
+            <NotificationToggle label="Invoice Overdue" defaultChecked={true} />
+            <NotificationToggle label="Proposal Accepted/Declined" defaultChecked={true} />
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-base font-semibold mb-4 border-b border-border-divider pb-2">Digest Frequency</h3>
+          <div className="flex gap-4">
+             <label className="flex items-center gap-2 text-sm cursor-pointer">
+               <input type="radio" name="digest" className="accent-brand-primary" /> Instant
+             </label>
+             <label className="flex items-center gap-2 text-sm cursor-pointer">
+               <input type="radio" name="digest" className="accent-brand-primary" defaultChecked /> Daily Summary
+             </label>
+             <label className="flex items-center gap-2 text-sm cursor-pointer">
+               <input type="radio" name="digest" className="accent-brand-primary" /> Weekly Summary
+             </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlanBilling() {
+  return (
+    <div className="bg-surface-card border border-border-divider rounded-2xl p-6 md:p-8 shadow-sm">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-xl font-bold text-text-main">Plan & Billing</h2>
+          <p className="text-sm text-text-muted mt-1">Manage your InvoiceHQ subscription.</p>
+        </div>
+      </div>
+
+      <div className="bg-surface-bg border-2 border-brand-primary rounded-xl p-6 mb-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/10 rounded-bl-full -z-10"></div>
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-brand-primary text-brand-dark uppercase tracking-wider mb-3">Current Plan</div>
+            <h3 className="text-2xl font-bold mb-1">Pro Tier</h3>
+            <p className="text-sm text-text-muted">₹999 / month • Renews on Aug 24, 2026</p>
+          </div>
+          <button className="px-4 py-2 border border-border-divider bg-surface-elevated rounded-lg text-sm font-medium hover:bg-surface-bg transition-colors">
+            Manage Billing
+          </button>
+        </div>
+        
+        <div className="mt-6 pt-6 border-t border-border-divider/50 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <div className="text-xs text-text-muted mb-1">Invoices</div>
+            <div className="font-semibold text-sm text-text-main">Unlimited</div>
+          </div>
+          <div>
+            <div className="text-xs text-text-muted mb-1">Clients</div>
+            <div className="font-semibold text-sm text-text-main">Unlimited</div>
+          </div>
+          <div>
+            <div className="text-xs text-text-muted mb-1">Team Members</div>
+            <div className="font-semibold text-sm text-text-main">3 of 5</div>
+          </div>
+          <div>
+            <div className="text-xs text-text-muted mb-1">Automations</div>
+            <div className="font-semibold text-sm text-text-main">Active</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 className="text-base font-semibold mb-4">Billing History</h3>
+      <table className="w-full text-sm text-left">
+        <thead>
+          <tr className="border-b border-border-divider">
+            <th className="py-2 font-medium text-text-muted">Date</th>
+            <th className="py-2 font-medium text-text-muted">Amount</th>
+            <th className="py-2 font-medium text-text-muted">Status</th>
+            <th className="py-2 font-medium text-text-muted">Receipt</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-border-divider/50">
+            <td className="py-3">Jul 24, 2026</td>
+            <td className="py-3">₹999</td>
+            <td className="py-3"><span className="text-emerald-500 font-medium">Paid</span></td>
+            <td className="py-3"><a href="#" className="text-brand-primary hover:underline">Download</a></td>
+          </tr>
+          <tr className="border-b border-border-divider/50">
+            <td className="py-3">Jun 24, 2026</td>
+            <td className="py-3">₹999</td>
+            <td className="py-3"><span className="text-emerald-500 font-medium">Paid</span></td>
+            <td className="py-3"><a href="#" className="text-brand-primary hover:underline">Download</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ----------------------------------------------------
+// UI Helpers
+// ----------------------------------------------------
+
+function InputGroup({ label, defaultValue, placeholder, type = "text", suffix }: any) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-text-main mb-1.5">{label}</label>
+      <div className="relative">
+        <input
+          type={type}
+          defaultValue={defaultValue}
+          placeholder={placeholder}
+          className={`w-full bg-surface-elevated border border-border-divider rounded-xl py-2 text-sm focus:border-brand-primary outline-none transition-colors ${suffix ? 'pl-4 pr-24' : 'px-4'}`}
+        />
+        {suffix && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-muted pointer-events-none">
+            {suffix}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SelectGroup({ label, options, defaultValue }: any) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-text-main mb-1.5">{label}</label>
+      <select defaultValue={defaultValue} className="w-full bg-surface-elevated border border-border-divider rounded-xl px-4 py-2 text-sm focus:border-brand-primary outline-none transition-colors appearance-none">
+        {options.map((opt: string) => <option key={opt} value={opt.split(' ')[0]}>{opt}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function Toggle({ defaultChecked, label }: { defaultChecked?: boolean, label?: string }) {
+  const [checked, setChecked] = useState(defaultChecked || false);
+  return (
+    <div className="flex items-center gap-2 cursor-pointer" onClick={() => setChecked(!checked)}>
+      {label && <span className="text-sm font-medium select-none">{label}</span>}
+      <div className={`w-10 h-6 rounded-full p-1 transition-colors ${checked ? 'bg-brand-primary' : 'bg-surface-elevated border border-border-divider'}`}>
+        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${checked ? 'translate-x-4 bg-brand-dark' : 'translate-x-0 bg-text-muted'}`}></div>
+      </div>
+    </div>
+  );
+}
+
+function NotificationToggle({ label, defaultChecked }: any) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm font-medium text-text-main">{label}</span>
+      <Toggle defaultChecked={defaultChecked} />
+    </div>
   );
 }
