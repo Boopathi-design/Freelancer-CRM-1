@@ -293,168 +293,139 @@ function InvoicesContent() {
 
         {mode === "list" ? (
           /* ================== TABULAR LIST VIEW ================== */
-          <div className="space-y-6">
-            {/* List Controls */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-card border border-border-line p-4 rounded-2xl shadow-sm">
-              {/* Status Tabs */}
-              <div className="flex flex-wrap gap-1 bg-surface-bg p-1 rounded-xl border border-border-line text-xs font-bold text-text-muted">
-                {["all", "draft", "sent", "viewed", "paid", "overdue"].map(
-                  (status) => (
-                    <button
-                      key={status}
-                      onClick={() => setStatusFilter(status)}
-                      className={`px-4 py-2 rounded-lg transition-all cursor-pointer ${
-                        statusFilter === status
-                          ? "bg-surface-card text-text-main shadow-sm"
-                          : "hover:text-text-main"
-                      }`}
-                    >
-                      <span className="capitalize">{status}</span>
-                    </button>
-                  ),
-                )}
+          <div className="space-y-6 max-w-7xl mx-auto">
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: "Total Invoices", value: invoices.length, color: "text-brand-primary", bg: "bg-brand-primary-light" },
+                { label: "Paid", value: invoices.filter(i => i.status === "paid").length, color: "text-state-success", bg: "bg-state-success/10" },
+                { label: "Overdue", value: invoices.filter(i => i.status === "overdue").length, color: "text-state-danger", bg: "bg-state-danger/10" },
+                { label: "Outstanding", value: `₹${totalOutstandingSum.toLocaleString("en-IN")}`, color: "text-state-warning", bg: "bg-state-warning/10" },
+              ].map(stat => (
+                <div key={stat.label} className="bg-white border border-border-line rounded-2xl p-4 shadow-sm">
+                  <p className="text-xs text-text-muted font-medium mb-1">{stat.label}</p>
+                  <p className={`text-xl font-bold tabular-nums ${stat.color}`}>{stat.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* List Controls (CoStudio Style) */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              {/* Status Filter Tabs */}
+              <div className="flex flex-wrap gap-1.5">
+                {["all", "draft", "sent", "viewed", "paid", "overdue"].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setStatusFilter(status)}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer capitalize ${
+                      statusFilter === status
+                        ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
+                        : "bg-white text-text-muted border border-border-line hover:text-text-main hover:border-brand-primary/30"
+                    }`}
+                  >
+                    {status}
+                  </button>
+                ))}
               </div>
 
-              {/* Search Input bar */}
+              {/* Search + New Invoice */}
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-bg border border-border-line text-xs font-semibold text-text-muted">
-                  <Search size={13} />
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-border-line text-sm text-text-muted bg-white shadow-sm focus-within:border-brand-primary transition-all">
+                  <Search size={15} />
                   <input
                     type="text"
                     placeholder="Search invoices..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-transparent outline-none border-none text-text-main placeholder:text-text-muted w-40"
+                    className="bg-transparent outline-none border-none text-text-main placeholder:text-text-muted w-44"
                   />
                 </div>
-
                 <button
                   onClick={() => router.push("/invoices?new=true")}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold transition-all focus-ring-indigo shadow-md shadow-brand-primary/15 cursor-pointer"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-sm font-semibold transition-all shadow-md shadow-brand-primary/20 cursor-pointer whitespace-nowrap"
                 >
-                  <Plus size={14} />
+                  <Plus size={16} />
                   <span>New Invoice</span>
                 </button>
               </div>
             </div>
 
-            {/* High density Data Grid Table */}
-            <div className="bg-surface-card border border-border-line rounded-2xl shadow-sm overflow-hidden">
+            {/* Invoice Table (CoStudio Style) */}
+            <div className="bg-white border border-border-line rounded-2xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[900px]">
+                <table className="w-full text-left border-collapse min-w-[960px]">
                   <thead>
-                    <tr className="bg-surface-bg border-b border-border-line text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                      <th className="py-4 px-6 font-bold w-32">Invoice</th>
-                      <th className="py-4 px-6 font-bold w-1/4">Client</th>
-                      <th className="py-4 px-6 font-bold">Due</th>
-                      <th className="py-4 px-6 font-bold text-right">Amount</th>
-                      <th className="py-4 px-6 font-bold">Status</th>
-                      <th className="py-4 px-6 font-bold">Last Follow-up</th>
-                      <th className="py-4 px-6 font-bold w-1/4">Next Action</th>
+                    <tr className="bg-brand-primary-light text-[13px] font-semibold text-brand-primary/90 tracking-wide border-b border-border-line">
+                      <th className="py-4 px-6 rounded-tl-2xl">Invoice #</th>
+                      <th className="py-4 px-6">Client</th>
+                      <th className="py-4 px-6">Issue Date</th>
+                      <th className="py-4 px-6">Due Date</th>
+                      <th className="py-4 px-6 text-right">Amount</th>
+                      <th className="py-4 px-6">Status</th>
+                      <th className="py-4 px-6 rounded-tr-2xl">Next Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border-line text-xs font-medium">
+                  <tbody className="divide-y divide-border-line/50 text-[14px] font-medium text-text-main">
                     {filteredInvoices.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={7}
-                          className="py-12 text-center text-text-muted"
-                        >
-                          No invoices registered. Click &ldquo;New
-                          Invoice&rdquo; to build one.
+                        <td colSpan={7} className="py-16 text-center text-text-muted text-sm">
+                          No invoices found. Click &ldquo;New Invoice&rdquo; to create one.
                         </td>
                       </tr>
                     ) : (
                       filteredInvoices.map((inv) => {
                         const isOverdue = inv.status === "overdue";
+                        const statusStyle: Record<string, string> = {
+                          paid: "bg-state-success/10 text-state-success",
+                          overdue: "bg-state-danger/10 text-state-danger",
+                          draft: "bg-slate-100 text-slate-500",
+                          sent: "bg-state-warning/10 text-state-warning",
+                          viewed: "bg-brand-primary-light text-brand-primary",
+                        };
                         return (
                           <tr
                             key={inv.id}
-                            onClick={() =>
-                              router.push(`/invoices?id=${inv.id}`)
-                            }
-                            className="hover:bg-surface-bg/40 cursor-pointer transition-colors group"
+                            onClick={() => router.push(`/invoices?id=${inv.id}`)}
+                            className="hover:bg-surface-bg/60 cursor-pointer transition-colors group"
                           >
-                            <td className="py-4 px-6 font-semibold text-text-muted group-hover:text-brand-primary transition-colors flex items-center gap-2.5">
-                              <span
-                                className={`w-2 h-2 rounded-full shrink-0 ${
-                                  inv.status === "paid"
-                                    ? "bg-state-success"
-                                    : inv.status === "overdue"
-                                      ? "bg-state-danger"
-                                      : inv.status === "draft"
-                                        ? "bg-slate-400"
-                                        : "bg-state-warning"
-                                }`}
-                              />
-                              <span>{inv.id}</span>
+                            <td className="py-4 px-6">
+                              <div className="flex items-center gap-2.5">
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${
+                                  inv.status === "paid" ? "bg-state-success" :
+                                  inv.status === "overdue" ? "bg-state-danger" :
+                                  inv.status === "draft" ? "bg-slate-400" : "bg-state-warning"
+                                }`} />
+                                <span className="font-semibold text-brand-primary group-hover:underline">{inv.id}</span>
+                              </div>
                             </td>
                             <td className="py-4 px-6">
-                              <div className="font-bold text-text-main">
-                                {inv.clientName}
-                              </div>
-                              <div className="text-[10px] text-text-muted font-normal mt-0.5">
-                                {inv.clientContact}
-                              </div>
+                              <p className="font-semibold text-text-main">{inv.clientName}</p>
+                              <p className="text-[12px] text-text-muted mt-0.5">{inv.clientContact}</p>
+                            </td>
+                            <td className="py-4 px-6 text-text-muted">
+                              {new Date(inv.issueDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                             </td>
                             <td className="py-4 px-6">
                               {isOverdue ? (
-                                <span className="text-state-danger font-bold flex items-center gap-1">
-                                  <span>
-                                    {Math.round(
-                                      (Date.now() -
-                                        new Date(inv.dueDate).getTime()) /
-                                        (1000 * 60 * 60 * 24),
-                                    ) || 8}
-                                    d overdue
-                                  </span>
-                                </span>
-                              ) : inv.status === "paid" ? (
-                                <span className="text-text-muted font-normal tabular-nums">
-                                  {new Date(inv.dueDate).toLocaleDateString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    },
-                                  )}
+                                <span className="text-state-danger font-semibold">
+                                  {Math.round((Date.now() - new Date(inv.dueDate).getTime()) / (1000*60*60*24)) || 8}d overdue
                                 </span>
                               ) : (
-                                <span className="text-text-main font-semibold tabular-nums">
-                                  {new Date(inv.dueDate).toLocaleDateString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    },
-                                  )}
+                                <span className="text-text-main">
+                                  {new Date(inv.dueDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                                 </span>
                               )}
                             </td>
-                            <td className="py-4 px-6 text-right font-extrabold text-text-main tabular-nums">
+                            <td className="py-4 px-6 text-right font-bold tabular-nums text-text-main">
                               ₹{inv.amount.toLocaleString("en-IN")}
                             </td>
                             <td className="py-4 px-6">
-                              <span
-                                className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase ${
-                                  inv.status === "paid"
-                                    ? "bg-state-success/10 text-state-success"
-                                    : inv.status === "overdue"
-                                      ? "bg-state-danger/10 text-state-danger"
-                                      : inv.status === "draft"
-                                        ? "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-                                        : "bg-state-warning/10 text-state-warning"
-                                }`}
-                              >
+                              <span className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${statusStyle[inv.status] || "bg-slate-100 text-slate-500"}`}>
                                 {inv.status}
                               </span>
                             </td>
-                            <td className="py-4 px-6 text-text-muted font-medium">
-                              {inv.lastFollowUp}
-                            </td>
-                            <td className="py-4 px-6 text-brand-primary font-bold hover:underline">
+                            <td className="py-4 px-6 text-brand-primary font-semibold text-sm">
                               {inv.nextAction}
                             </td>
                           </tr>
@@ -465,14 +436,10 @@ function InvoicesContent() {
                 </table>
               </div>
 
-              <div className="px-6 py-4 bg-surface-bg border-t border-border-line flex items-center justify-between text-[11px] text-text-muted font-medium">
-                <span>
-                  Showing {filteredInvoices.length} of {invoices.length}{" "}
-                  invoices
-                </span>
-                <span className="font-bold tabular-nums">
-                  Total outstanding: ₹
-                  {totalOutstandingSum.toLocaleString("en-IN")}
+              <div className="px-6 py-4 bg-white border-t border-border-line flex items-center justify-between text-sm text-text-muted font-medium">
+                <span>Showing {filteredInvoices.length} of {invoices.length} invoices</span>
+                <span className="font-bold text-text-main tabular-nums">
+                  Total outstanding: ₹{totalOutstandingSum.toLocaleString("en-IN")}
                 </span>
               </div>
             </div>

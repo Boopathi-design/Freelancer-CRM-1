@@ -3,7 +3,7 @@
 :root {
   --brand-primary: #6366F1;
   --brand-primary-hover: #4f46e5;
-  --brand-primary-light: rgba(99, 102, 241, 0.1);
+  --brand-primary-light: #EEF2FF;
   --surface-bg: #F8FAFC;
   --surface-card: #FFFFFF;
   --border-line: #E2E8F0;
@@ -18,17 +18,17 @@
 }
 
 .dark {
-  --brand-primary: #818CF8;
-  --brand-primary-hover: #6366F1;
-  --brand-primary-light: rgba(129, 140, 248, 0.15);
-  --surface-bg: #0F172A;
-  --surface-card: #1E293B;
-  --border-line: #334155;
-  --text-main: #F8FAFC;
-  --text-muted: #94A3B8;
-  --state-success: #34D399;
-  --state-warning: #FBBF24;
-  --state-danger: #F87171;
+  --brand-primary: #6366F1;
+  --brand-primary-hover: #4f46e5;
+  --brand-primary-light: #EEF2FF;
+  --surface-bg: #F8FAFC;
+  --surface-card: #FFFFFF;
+  --border-line: #E2E8F0;
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --state-success: #10B981;
+  --state-warning: #F59E0B;
+  --state-danger: #EF4444;
 
   --background: var(--surface-bg);
   --foreground: var(--text-main);
