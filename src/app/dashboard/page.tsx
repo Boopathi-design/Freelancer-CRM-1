@@ -80,7 +80,7 @@ export default function Dashboard() {
   };
 
   const handleCopyLink = (invoice: Invoice) => {
-    const portalUrl = `${window.location.origin}/portal/${invoice.id}`;
+    const portalUrl = `${window.location.origin}/pay/${invoice.id}`;
     navigator.clipboard
       .writeText(portalUrl)
       .then(() => {
@@ -89,7 +89,7 @@ export default function Dashboard() {
         );
       })
       .catch(() => {
-        triggerToast(`URL: /portal/${invoice.id}`);
+        triggerToast(`URL: /pay/${invoice.id}`);
       });
   };
 

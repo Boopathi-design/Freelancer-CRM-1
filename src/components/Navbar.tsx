@@ -64,6 +64,8 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
     }
   };
 
+  const portalInvoiceId = mockDb.getInvoices()[0]?.id ?? "INV-2024-041";
+
   return (
     <header className="w-full bg-white px-8 py-6 flex items-center justify-between select-none border-b border-border-line">
       {/* Title / Subtitle */}
@@ -80,6 +82,14 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
 
       {/* Right Actions */}
       <div className="flex items-center gap-4">
+        <Link
+          href={`/pay/${portalInvoiceId}`}
+          className="inline-flex items-center gap-2 rounded-full border border-border-line bg-white px-3 py-1.5 text-[12px] font-semibold text-text-main transition-colors hover:border-brand-primary/40 hover:bg-brand-primary-light"
+        >
+          <span className="h-2 w-2 rounded-full bg-state-success" />
+          Portal
+        </Link>
+
         {/* Theme Toggle Placeholder (matches CoStudio) */}
         <button className="w-10 h-10 rounded-full border border-border-line flex items-center justify-center text-text-muted hover:text-text-main hover:bg-surface-bg transition-colors">
           <Moon size={18} />

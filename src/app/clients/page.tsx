@@ -4,7 +4,7 @@ import React, { useEffect, useState, Suspense } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import WorkspaceLayout from "@/components/WorkspaceLayout";
 import { mockDb, Client } from "@/lib/mockDb";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Users,
   Plus,
@@ -15,6 +15,7 @@ import {
 
 function ClientsIndexContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -159,7 +160,19 @@ function ClientsIndexContent() {
                     </tr>
                   ) : (
                     filteredClients.map((client, index) => (
-                      <tr key={client.id} className="hover:bg-surface-bg/60 transition-colors">
+                      <tr
+                        key={client.id}
+                        className="hover:bg-surface-bg/60 transition-colors cursor-pointer"
+                        onClick={() => router.push(`/clients/${client.id}`)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            router.push(`/clients/${client.id}`);
+                          }
+                        }}
+                        tabIndex={0}
+                        role="button"
+                      >
                         <td className="py-4 px-6 text-text-muted font-normal">
                           {(index + 1).toString().padStart(2, '0')}
                         </td>

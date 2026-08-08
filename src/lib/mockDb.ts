@@ -6,6 +6,9 @@ export interface WorkspaceSettings {
   baseCurrency: string;
   companyName: string;
   email: string;
+  portalSubdomain: string;
+  portalBrandColor: string;
+  portalWelcomeMessage: string;
 }
 
 export interface Client {
@@ -101,7 +104,10 @@ const DEFAULT_WORKSPACE_SETTINGS: WorkspaceSettings = {
   placeOfSupply: "Maharashtra",
   baseCurrency: "INR",
   companyName: "ARK Design Studio",
-  email: "arkdesign.in"
+  email: "arkdesign.in",
+  portalSubdomain: "arkdesign",
+  portalBrandColor: "#6366F1",
+  portalWelcomeMessage: "Welcome to your billing portal! Here you can view, download, and pay your invoices."
 };
 
 const DEFAULT_CLIENTS: Client[] = [

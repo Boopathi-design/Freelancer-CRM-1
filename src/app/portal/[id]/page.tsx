@@ -29,6 +29,12 @@ export default function ClientPortal() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
+  const openPayPage = () => {
+    if (invoice) {
+      router.push(`/pay/${invoice.id}`);
+    }
+  };
+
   const loadInvoice = () => {
     if (!invoiceId) return;
     const invoices = mockDb.getInvoices();
@@ -307,11 +313,11 @@ export default function ClientPortal() {
                 </div>
 
                 <button
-                  onClick={() => setIsCheckoutOpen(true)}
+                  onClick={openPayPage}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold transition-all focus-ring-indigo shadow-lg shadow-brand-primary/15 cursor-pointer"
                 >
                   <Smartphone size={14} />
-                  <span>Pay via UPI Gateway</span>
+                  <span>Pay via UPI / Net Banking</span>
                 </button>
               </div>
             )}
