@@ -3,14 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Bell,
-  Moon,
-  User,
-  LogOut,
-  ChevronRight,
-  Sun
-} from "lucide-react";
+import { Bell, Moon, User, LogOut, ChevronRight, Sun } from "lucide-react";
 import { mockDb, ActivityLog } from "@/lib/mockDb";
 import { useAuth } from "./AuthProvider";
 import { useTheme } from "./ThemeProvider";
@@ -74,9 +67,7 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
           {title}
         </h2>
         {subtitle && (
-          <p className="text-[13px] text-text-muted font-medium">
-            {subtitle}
-          </p>
+          <p className="text-[13px] text-text-muted font-medium">{subtitle}</p>
         )}
       </div>
 
@@ -114,20 +105,28 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
           {showNotifications && (
             <div className="absolute right-0 mt-2 w-80 bg-white border border-border-line rounded-2xl shadow-xl py-3 z-50">
               <div className="px-4 pb-2 border-b border-border-line flex justify-between items-center">
-                <h3 className="font-semibold text-text-main text-sm">Notifications</h3>
-                <span className="text-[10px] bg-brand-primary-light text-brand-primary font-bold px-2 py-0.5 rounded-full">{unreadCount} New</span>
+                <h3 className="font-semibold text-text-main text-sm">
+                  Notifications
+                </h3>
+                <span className="text-[10px] bg-brand-primary-light text-brand-primary font-bold px-2 py-0.5 rounded-full">
+                  {unreadCount} New
+                </span>
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {logs.length === 0 ? (
-                  <div className="p-6 text-center text-text-muted text-sm">No new notifications</div>
+                  <div className="p-6 text-center text-text-muted text-sm">
+                    No new notifications
+                  </div>
                 ) : (
-                  logs.map(log => (
-                    <div 
+                  logs.map((log) => (
+                    <div
                       key={log.id}
                       onClick={() => handleNotificationClick(log)}
                       className="px-4 py-3 hover:bg-surface-bg cursor-pointer border-b border-border-line/50 last:border-0"
                     >
-                      <p className="text-[13px] text-text-main line-clamp-2 leading-tight">{log.description}</p>
+                      <p className="text-[13px] text-text-main line-clamp-2 leading-tight">
+                        {log.description}
+                      </p>
                       <p className="text-[10px] text-text-muted mt-1">
                         {new Date(log.timestamp).toLocaleDateString()}
                       </p>
@@ -151,7 +150,9 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
             <div className="w-8 h-8 rounded-full bg-brand-primary-light flex items-center justify-center text-brand-primary">
               <User size={15} />
             </div>
-            <span className="text-[13px] font-medium text-text-main">Profile</span>
+            <span className="text-[13px] font-medium text-text-main">
+              Profile
+            </span>
             <ChevronRight size={14} className="text-text-muted" />
           </button>
 
@@ -159,13 +160,20 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
           {showProfileMenu && (
             <div className="absolute right-0 mt-2 w-48 bg-white border border-border-line rounded-xl shadow-xl py-1 z-50">
               <div className="px-4 py-3 border-b border-border-line mb-1">
-                <p className="text-sm font-semibold text-text-main truncate">{user?.name || "User"}</p>
-                <p className="text-[11px] text-text-muted truncate">{user?.email || "hello@arkdesign.in"}</p>
+                <p className="text-sm font-semibold text-text-main truncate">
+                  {user?.name || "User"}
+                </p>
+                <p className="text-[11px] text-text-muted truncate">
+                  {user?.email || "hello@arkdesign.in"}
+                </p>
               </div>
-              <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-text-main hover:bg-surface-bg">
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-text-main hover:bg-surface-bg"
+              >
                 <User size={14} /> My Profile
               </Link>
-              <button 
+              <button
                 onClick={logout}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-state-danger hover:bg-state-danger/10 text-left"
               >

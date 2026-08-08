@@ -5,13 +5,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import WorkspaceLayout from "@/components/WorkspaceLayout";
 import { mockDb, Client } from "@/lib/mockDb";
 import { useSearchParams, useRouter } from "next/navigation";
-import {
-  Users,
-  Plus,
-  Search,
-  X,
-  Sparkles,
-} from "lucide-react";
+import { Users, Plus, Search, X, Sparkles } from "lucide-react";
 
 function ClientsIndexContent() {
   const searchParams = useSearchParams();
@@ -98,7 +92,6 @@ function ClientsIndexContent() {
         )}
 
         <div className="space-y-6 max-w-7xl mx-auto mt-2">
-          
           {/* Controls Toolbar (CoStudio Style) */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-border-line text-sm font-medium text-text-muted w-full md:max-w-md bg-white shadow-sm focus-within:border-brand-primary focus-within:ring-2 focus-within:ring-brand-primary-light transition-all">
@@ -142,19 +135,27 @@ function ClientsIndexContent() {
                     <th className="py-4 px-6 text-right">Outstanding</th>
                     <th className="py-4 px-6">Avg payment delay</th>
                     <th className="py-4 px-6">Last Invoice</th>
-                    <th className="py-4 px-6 text-center rounded-tr-2xl">Invoices</th>
+                    <th className="py-4 px-6 text-center rounded-tr-2xl">
+                      Invoices
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-line/50 text-[14px] font-medium text-text-main">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-text-muted text-sm">
+                      <td
+                        colSpan={8}
+                        className="py-12 text-center text-text-muted text-sm"
+                      >
                         Loading...
                       </td>
                     </tr>
                   ) : filteredClients.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-text-muted text-sm">
+                      <td
+                        colSpan={8}
+                        className="py-12 text-center text-text-muted text-sm"
+                      >
                         No clients found.
                       </td>
                     </tr>
@@ -174,35 +175,48 @@ function ClientsIndexContent() {
                         role="button"
                       >
                         <td className="py-4 px-6 text-text-muted font-normal">
-                          {(index + 1).toString().padStart(2, '0')}
+                          {(index + 1).toString().padStart(2, "0")}
                         </td>
                         <td className="py-4 px-6 text-text-main font-semibold">
                           {client.company}
                         </td>
                         <td className="py-4 px-6">
-                          <p className="text-text-main font-medium">{client.contact}</p>
-                          <p className="text-[12px] text-text-muted font-normal mt-0.5">{client.email}</p>
+                          <p className="text-text-main font-medium">
+                            {client.contact}
+                          </p>
+                          <p className="text-[12px] text-text-muted font-normal mt-0.5">
+                            {client.email}
+                          </p>
                         </td>
                         <td className="py-4 px-6 text-text-main font-medium tracking-wide">
-                          {client.gstin || '-'}
+                          {client.gstin || "-"}
                         </td>
                         <td className="py-4 px-6 text-right">
-                          <span className={`font-semibold ${client.outstanding > 0 ? 'text-state-danger' : 'text-state-success'}`}>
-                            {client.outstanding > 0 ? `₹ ${(client.outstanding).toLocaleString("en-IN")}` : 'Nil'}
+                          <span
+                            className={`font-semibold ${client.outstanding > 0 ? "text-state-danger" : "text-state-success"}`}
+                          >
+                            {client.outstanding > 0
+                              ? `₹ ${client.outstanding.toLocaleString("en-IN")}`
+                              : "Nil"}
                           </span>
                         </td>
                         <td className="py-4 px-6 text-text-main">
-                          {client.avgDelay > 0 ? `${client.avgDelay} Days` : '-'}
+                          {client.avgDelay > 0
+                            ? `${client.avgDelay} Days`
+                            : "-"}
                         </td>
                         <td className="py-4 px-6 text-text-main">
-                          {new Date(client.lastInvoiceDate).toLocaleDateString("en-IN", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
+                          {new Date(client.lastInvoiceDate).toLocaleDateString(
+                            "en-IN",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )}
                         </td>
                         <td className="py-4 px-6 text-center font-bold tabular-nums">
-                          {(client.invoiceCount).toString().padStart(2, '0')}
+                          {client.invoiceCount.toString().padStart(2, "0")}
                         </td>
                       </tr>
                     ))
@@ -213,7 +227,8 @@ function ClientsIndexContent() {
 
             <div className="px-6 py-4 bg-white border-t border-border-line text-sm text-text-muted font-medium flex items-center justify-between">
               <div className="flex items-center gap-2">
-                Showing {(filteredClients.length).toString().padStart(2, '0')} of {clients.length} Clients
+                Showing {filteredClients.length.toString().padStart(2, "0")} of{" "}
+                {clients.length} Clients
                 <select className="ml-2 bg-surface-bg border border-border-line rounded-lg px-2 py-1 text-sm outline-none focus:border-brand-primary">
                   <option>08</option>
                   <option>15</option>
@@ -323,7 +338,9 @@ function ClientsIndexContent() {
 
 export default function ClientsIndex() {
   return (
-    <Suspense fallback={<div className="p-12 text-center">Loading clients...</div>}>
+    <Suspense
+      fallback={<div className="p-12 text-center">Loading clients...</div>}
+    >
       <ClientsIndexContent />
     </Suspense>
   );
