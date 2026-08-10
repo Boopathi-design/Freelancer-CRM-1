@@ -26,7 +26,9 @@ export default function Dashboard() {
   const [needsActionInvoices, setNeedsActionInvoices] = useState<Invoice[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [reminderLoadingId, setReminderLoadingId] = useState<string | null>(null);
+  const [reminderLoadingId, setReminderLoadingId] = useState<string | null>(
+    null,
+  );
   const [reminderErrorId, setReminderErrorId] = useState<string | null>(null);
 
   const loadData = () => {
@@ -98,7 +100,9 @@ export default function Dashboard() {
       }
 
       const invoiceList = mockDb.getInvoices();
-      const invoiceIndex = invoiceList.findIndex((inv) => inv.id === invoice.id);
+      const invoiceIndex = invoiceList.findIndex(
+        (inv) => inv.id === invoice.id,
+      );
       if (invoiceIndex >= 0) {
         invoiceList[invoiceIndex].lastFollowUp = "Just now";
         invoiceList[invoiceIndex].nextAction = `${reminderType} reminder sent`;
@@ -451,7 +455,10 @@ export default function Dashboard() {
                               >
                                 {reminderLoadingId === inv.id ? (
                                   <>
-                                    <Loader2 size={10} className="animate-spin" />
+                                    <Loader2
+                                      size={10}
+                                      className="animate-spin"
+                                    />
                                     <span>Sending...</span>
                                   </>
                                 ) : (

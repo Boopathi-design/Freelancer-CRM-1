@@ -672,8 +672,7 @@ function InvoicesContent() {
                                   }
                                   className="w-full px-2.5 py-1.5 rounded-lg bg-surface-card border border-border-line text-[11px] text-text-main outline-none focus:border-brand-primary transition-opacity duration-300"
                                   style={{
-                                    opacity:
-                                      improvingIndex === index ? 0.7 : 1,
+                                    opacity: improvingIndex === index ? 0.7 : 1,
                                   }}
                                 />
                                 <button
@@ -684,7 +683,10 @@ function InvoicesContent() {
                                   title="Optimize description with AI"
                                 >
                                   {improvingIndex === index ? (
-                                    <Loader2 size={11} className="animate-spin" />
+                                    <Loader2
+                                      size={11}
+                                      className="animate-spin"
+                                    />
                                   ) : (
                                     <Sparkles size={11} />
                                   )}
