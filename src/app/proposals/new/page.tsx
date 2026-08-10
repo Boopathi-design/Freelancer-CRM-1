@@ -33,7 +33,9 @@ export default function Proposals() {
 
   // Output Generation States
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRevealing, setIsRevealing] = useState(false);
   const [generatedDoc, setGeneratedDoc] = useState<string | null>(null);
+  const [revealedDoc, setRevealedDoc] = useState("");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,15 +75,16 @@ export default function Proposals() {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const runProposalGeneration = async () => {
     if (!title || !clientName || !budget) {
       alert("Please fill in Title, Client and Budget");
       return;
     }
 
     setIsGenerating(true);
+    setIsRevealing(false);
     setGeneratedDoc(null);
+    setRevealedDoc("");
 
     try {
       const response = await fetch("/api/ai-generate", {
@@ -110,9 +113,23 @@ export default function Proposals() {
         throw new Error(result.error || "AI proposal generation failed.");
       }
 
-      setGeneratedDoc(
-        result.text || "Proposal generation produced no content.",
-      );
+      const nextDoc = result.text || "Proposal generation produced no content.";
+      setGeneratedDoc(nextDoc);
+      setRevealedDoc("");
+      setIsRevealing(true);
+
+      let charIndex = 0;
+      const interval = window.setInterval(() => {
+        charIndex += 1;
+        setRevealedDoc(nextDoc.slice(0, charIndex));
+
+        if (charIndex >= nextDoc.length) {
+          window.clearInterval(interval);
+          setIsRevealing(false);
+          setIsGenerating(false);
+        }
+      }, 12);
+
       triggerToast("AI Proposal generated successfully!");
       mockDb.addLog(
         "proposal_generated",
@@ -120,10 +137,19 @@ export default function Proposals() {
       );
     } catch (error) {
       console.error("Proposal generation failed:", error);
-      triggerToast("AI proposal generation failed. Please try again.");
-    } finally {
       setIsGenerating(false);
+      setIsRevealing(false);
+      triggerToast("AI proposal generation failed. Please try again.");
     }
+  };
+
+  const handleGenerate = (e: React.FormEvent) => {
+    e.preventDefault();
+    runProposalGeneration();
+  };
+
+  const handleRegenerate = () => {
+    runProposalGeneration();
   };
 
   const handleConvertToInvoice = () => {
@@ -329,14 +355,23 @@ export default function Proposals() {
               <div className="flex-grow flex flex-col justify-between h-full space-y-6">
                 {/* Document Sheet layout */}
                 <div className="flex-1 p-6 bg-surface-bg/50 border border-border-line rounded-xl overflow-y-auto font-mono text-[10px] whitespace-pre-wrap leading-relaxed text-text-main tabular-nums select-text">
-                  {generatedDoc}
+                  {revealedDoc}
                 </div>
 
                 {/* Action bar for generated document */}
                 <div className="flex items-center gap-3 pt-4 border-t border-border-line">
                   <button
+                    onClick={handleRegenerate}
+                    className="px-3 py-2.5 rounded-xl border border-border-line bg-surface-bg text-[10px] font-bold text-text-main hover:text-text-main transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isGenerating || isRevealing}
+                  >
+                    Regenerate
+                  </button>
+
+                  <button
                     onClick={handleConvertToInvoice}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold transition-all focus-ring-indigo shadow-md shadow-brand-primary/10 cursor-pointer"
+                    disabled={isGenerating || isRevealing}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold transition-all focus-ring-indigo shadow-md shadow-brand-primary/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <FileText size={13} />
                     <span>Convert to Invoice</span>
@@ -347,7 +382,8 @@ export default function Proposals() {
                     onClick={() =>
                       triggerToast("Proposal downloaded as PDF (simulation)")
                     }
-                    className="p-2.5 rounded-xl border border-border-line hover:bg-surface-bg text-text-muted hover:text-text-main transition-colors cursor-pointer"
+                    disabled={isGenerating || isRevealing}
+                    className="p-2.5 rounded-xl border border-border-line hover:bg-surface-bg text-text-muted hover:text-text-main transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Download PDF"
                   >
                     <Download size={14} />

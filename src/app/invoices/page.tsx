@@ -22,6 +22,7 @@ import {
   Settings,
   HelpCircle,
   FileSpreadsheet,
+  Loader2,
 } from "lucide-react";
 
 function InvoicesContent() {
@@ -60,6 +61,11 @@ function InvoicesContent() {
 
   // States
   const [isImproving, setIsImproving] = useState(false);
+  const [improvingIndex, setImprovingIndex] = useState<number | null>(null);
+  const [undoState, setUndoState] = useState<{
+    index: number;
+    original: string;
+  } | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const loadData = () => {
@@ -178,6 +184,8 @@ function InvoicesContent() {
     }
 
     setIsImproving(true);
+    setImprovingIndex(index);
+    setUndoState(null);
     triggerToast("Optimizing description with AI...");
 
     try {
@@ -195,13 +203,19 @@ function InvoicesContent() {
         throw new Error(result.error || "AI description rewrite failed.");
       }
 
-      handleUpdateItem(index, "description", result.text || currentDesc);
+      const improvedText = result.text || currentDesc;
+      handleUpdateItem(index, "description", improvedText);
+      setUndoState({ index, original: currentDesc });
+      window.setTimeout(() => {
+        setUndoState((state) => (state?.index === index ? null : state));
+      }, 4000);
       triggerToast("AI Improved description applied!");
     } catch (error) {
       console.error("AI improvement failed:", error);
       triggerToast("AI description update failed. Please try again.");
     } finally {
       setIsImproving(false);
+      setImprovingIndex(null);
     }
   };
 
@@ -656,16 +670,41 @@ function InvoicesContent() {
                                       e.target.value,
                                     )
                                   }
-                                  className="w-full px-2.5 py-1.5 rounded-lg bg-surface-card border border-border-line text-[11px] text-text-main outline-none focus:border-brand-primary"
+                                  className="w-full px-2.5 py-1.5 rounded-lg bg-surface-card border border-border-line text-[11px] text-text-main outline-none focus:border-brand-primary transition-opacity duration-300"
+                                  style={{
+                                    opacity:
+                                      improvingIndex === index ? 0.7 : 1,
+                                  }}
                                 />
                                 <button
                                   type="button"
                                   onClick={() => handleAIImprove(index)}
-                                  className="px-2 rounded-lg bg-brand-primary-light hover:bg-brand-primary/20 text-brand-primary text-[10px] font-semibold transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+                                  disabled={improvingIndex === index}
+                                  className="px-2 rounded-lg bg-brand-primary-light hover:bg-brand-primary/20 text-brand-primary text-[10px] font-semibold transition-colors flex items-center justify-center shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                                   title="Optimize description with AI"
                                 >
-                                  <Sparkles size={11} />
+                                  {improvingIndex === index ? (
+                                    <Loader2 size={11} className="animate-spin" />
+                                  ) : (
+                                    <Sparkles size={11} />
+                                  )}
                                 </button>
+                                {undoState?.index === index && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleUpdateItem(
+                                        index,
+                                        "description",
+                                        undoState.original,
+                                      );
+                                      setUndoState(null);
+                                    }}
+                                    className="px-2 py-1 rounded-lg border border-border-line bg-white text-[10px] font-bold text-text-muted hover:text-text-main transition-colors cursor-pointer"
+                                  >
+                                    Undo
+                                  </button>
+                                )}
                               </div>
                             </div>
                             <div>

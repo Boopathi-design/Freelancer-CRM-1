@@ -18,6 +18,7 @@ import {
   Zap,
   HelpCircle,
   FileSpreadsheet,
+  Loader2,
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -25,6 +26,8 @@ export default function Dashboard() {
   const [needsActionInvoices, setNeedsActionInvoices] = useState<Invoice[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [reminderLoadingId, setReminderLoadingId] = useState<string | null>(null);
+  const [reminderErrorId, setReminderErrorId] = useState<string | null>(null);
 
   const loadData = () => {
     const dashboardMetrics = mockDb.getDashboardMetrics();
@@ -60,6 +63,17 @@ export default function Dashboard() {
   };
 
   const handleSendReminder = async (invoice: Invoice) => {
+    const daysOverdue = Math.max(
+      1,
+      Math.round(
+        (Date.now() - new Date(invoice.dueDate).getTime()) /
+          (1000 * 60 * 60 * 24),
+      ),
+    );
+    const reminderType = daysOverdue >= 4 ? "firm" : "friendly";
+
+    setReminderLoadingId(invoice.id);
+    setReminderErrorId(null);
     triggerToast("Generating AI reminder...");
 
     try {
@@ -73,13 +87,7 @@ export default function Dashboard() {
             invoiceNumber: invoice.id,
             amount: invoice.amount,
             dueDate: invoice.dueDate,
-            daysOverdue: Math.max(
-              1,
-              Math.round(
-                (Date.now() - new Date(invoice.dueDate).getTime()) /
-                  (1000 * 60 * 60 * 24),
-              ),
-            ),
+            daysOverdue,
           },
         }),
       });
@@ -89,21 +97,35 @@ export default function Dashboard() {
         throw new Error(result.error || "AI reminder could not be created.");
       }
 
-      const generatedMessage =
-        result.text || "Payment reminder generated successfully.";
+      const invoiceList = mockDb.getInvoices();
+      const invoiceIndex = invoiceList.findIndex((inv) => inv.id === invoice.id);
+      if (invoiceIndex >= 0) {
+        invoiceList[invoiceIndex].lastFollowUp = "Just now";
+        invoiceList[invoiceIndex].nextAction = `${reminderType} reminder sent`;
+        if (invoiceList[invoiceIndex].status === "viewed") {
+          invoiceList[invoiceIndex].status = "sent";
+        }
+        mockDb.saveInvoices(invoiceList);
+      }
+
       mockDb.addLog(
         "webhook_reconciliation",
-        `AI payment reminder for ${invoice.id} (${invoice.clientName}): ${generatedMessage}`,
+        `Sent ${reminderType} AI reminder for ${invoice.id} to ${invoice.clientName}.`,
+        {
+          invoiceId: invoice.id,
+          reminderType,
+          timestamp: new Date().toISOString(),
+        },
       );
-      triggerToast(
-        `AI reminder ready for ${invoice.clientName}: ${generatedMessage.slice(0, 60)}${generatedMessage.length > 60 ? "..." : ""}`,
-      );
+
+      triggerToast(`Reminder sent to ${invoice.clientName}`);
+      setReminderLoadingId(null);
       window.dispatchEvent(new Event("invoicehq_db_update"));
     } catch (error) {
       console.error("Reminder generation failed:", error);
-      triggerToast(
-        "AI reminder unavailable. Please retry or use the classic reminder flow.",
-      );
+      setReminderLoadingId(null);
+      setReminderErrorId(invoice.id);
+      triggerToast("AI reminder failed. Please retry.");
     }
   };
 
@@ -424,10 +446,27 @@ export default function Dashboard() {
                             <div className="mt-2.5 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 onClick={() => handleSendReminder(inv)}
-                                className="px-2.5 py-1 rounded bg-brand-primary-light hover:bg-brand-primary/20 text-brand-primary text-[10px] font-bold transition-all focus-ring-indigo cursor-pointer"
+                                disabled={reminderLoadingId === inv.id}
+                                className="px-2.5 py-1 rounded bg-brand-primary-light hover:bg-brand-primary/20 text-brand-primary text-[10px] font-bold transition-all focus-ring-indigo cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5"
                               >
-                                Remind
+                                {reminderLoadingId === inv.id ? (
+                                  <>
+                                    <Loader2 size={10} className="animate-spin" />
+                                    <span>Sending...</span>
+                                  </>
+                                ) : (
+                                  "Remind"
+                                )}
                               </button>
+                              {reminderErrorId === inv.id && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSendReminder(inv)}
+                                  className="text-[10px] font-bold text-state-danger hover:underline"
+                                >
+                                  Retry
+                                </button>
+                              )}
                               <button
                                 onClick={() => handleCopyLink(inv)}
                                 className="p-1 rounded hover:bg-surface-bg text-text-muted hover:text-text-main transition-all focus-ring-indigo cursor-pointer"
