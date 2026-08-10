@@ -73,7 +73,7 @@ export default function Proposals() {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  const handleGenerate = (e: React.FormEvent) => {
+  const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !clientName || !budget) {
       alert("Please fill in Title, Client and Budget");
@@ -83,45 +83,47 @@ export default function Proposals() {
     setIsGenerating(true);
     setGeneratedDoc(null);
 
-    // Simulate AI compilation
-    setTimeout(() => {
-      setIsGenerating(false);
-      const doc = `PROPOSAL FOR SERVICES
-PROJECT: ${title.toUpperCase()}
-CLIENT: ${clientName}
-COMPILED BY: ARK Design Studio
-DATE: ${new Date().toLocaleDateString("en-IN")}
+    try {
+      const response = await fetch("/api/ai-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "proposal",
+          payload: {
+            title,
+            client: clientName,
+            scope:
+              scope ||
+              "Deliver full-scale design implementation and software architecture.",
+            deliverables:
+              deliverables ||
+              "Figma Design Files, Next.js Prototypes, Relational Schemas, Local Payment Gateway Integration",
+            duration,
+            budget,
+            tone,
+          },
+        }),
+      });
 
-1. EXECUTIVE SUMMARY
-ARK Design Studio is pleased to submit this proposal for ${title} to support ${clientName}'s strategic goals. We bring verified expertise in clean web architectures, rapid rendering UI/UX templates, and custom product development cycles.
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "AI proposal generation failed.");
+      }
 
-2. DETAILED SCOPE OF WORK
-${scope || "Deliver full-scale design implementation and software architecture."}
-
-3. PROJECT DELIVERABLES
-The scope encompasses the following specific milestones:
-${
-  deliverables
-    .split(",")
-    .map((d, i) => `${i + 1}. ${d.trim()}`)
-    .join("\n") ||
-  "1. Figma Design Files\n2. Next.js Prototypes\n3. Relational Schemas\n4. Local Payment Gateways integration"
-}
-
-4. TIMELINE & ESTIMATED INVESTMENT
-- Estimated Duration: ${duration}
-- Proposed Budget: ₹${parseFloat(budget).toLocaleString("en-IN")} (Plus applicable CGST+SGST tax rates)
-
-5. CONVERSION PROTOCOLS
-Upon sign-off, this agreement transitions immediately to an active billing milestone schedule.`;
-
-      setGeneratedDoc(doc);
+      setGeneratedDoc(
+        result.text || "Proposal generation produced no content.",
+      );
       triggerToast("AI Proposal generated successfully!");
       mockDb.addLog(
         "proposal_generated",
         `Created AI proposal template '${title}' for client ${clientName} valued at ₹${parseFloat(budget).toLocaleString("en-IN")}.`,
       );
-    }, 2000);
+    } catch (error) {
+      console.error("Proposal generation failed:", error);
+      triggerToast("AI proposal generation failed. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleConvertToInvoice = () => {

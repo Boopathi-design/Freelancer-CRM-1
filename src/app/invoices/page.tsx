@@ -169,8 +169,8 @@ function InvoicesContent() {
     setItems(newItems);
   };
 
-  // AI Description Helper (Gemini mockup)
-  const handleAIImprove = (index: number) => {
+  // AI Description Helper
+  const handleAIImprove = async (index: number) => {
     const currentDesc = items[index].description;
     if (!currentDesc.trim()) {
       alert("Please enter a basic description first.");
@@ -180,32 +180,29 @@ function InvoicesContent() {
     setIsImproving(true);
     triggerToast("Optimizing description with AI...");
 
-    setTimeout(() => {
-      setIsImproving(false);
-      let optimized = currentDesc;
+    try {
+      const response = await fetch("/api/ai-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "improve-line-item",
+          payload: { description: currentDesc },
+        }),
+      });
 
-      if (currentDesc.toLowerCase().includes("ui/ux")) {
-        optimized =
-          "UI/UX Design — Mobile Application layout, high-fidelity user flows, interactive prototypes, and modular system design sheets (12 screens)";
-      } else if (
-        currentDesc.toLowerCase().includes("brand") ||
-        currentDesc.toLowerCase().includes("logo")
-      ) {
-        optimized =
-          "Brand Identity Package — Custom logo assets, harmonious typography system guidelines, and cross-channel visual assets guidelines";
-      } else if (
-        currentDesc.toLowerCase().includes("frontend") ||
-        currentDesc.toLowerCase().includes("development")
-      ) {
-        optimized =
-          "Production-grade Frontend Development — Clean React components, Tailwind styling frameworks integration, and state configurations mapping";
-      } else {
-        optimized = `Professional Consulting & Delivery: ${currentDesc} - Tailored B2B implementation architecture and execution support.`;
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "AI description rewrite failed.");
       }
 
-      handleUpdateItem(index, "description", optimized);
+      handleUpdateItem(index, "description", result.text || currentDesc);
       triggerToast("AI Improved description applied!");
-    }, 1500);
+    } catch (error) {
+      console.error("AI improvement failed:", error);
+      triggerToast("AI description update failed. Please try again.");
+    } finally {
+      setIsImproving(false);
+    }
   };
 
   // Math Calculations (Strict tabular-nums)
@@ -294,18 +291,44 @@ function InvoicesContent() {
         {mode === "list" ? (
           /* ================== TABULAR LIST VIEW ================== */
           <div className="space-y-6 max-w-7xl mx-auto">
-
             {/* Stats Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "Total Invoices", value: invoices.length, color: "text-brand-primary", bg: "bg-brand-primary-light" },
-                { label: "Paid", value: invoices.filter(i => i.status === "paid").length, color: "text-state-success", bg: "bg-state-success/10" },
-                { label: "Overdue", value: invoices.filter(i => i.status === "overdue").length, color: "text-state-danger", bg: "bg-state-danger/10" },
-                { label: "Outstanding", value: `₹${totalOutstandingSum.toLocaleString("en-IN")}`, color: "text-state-warning", bg: "bg-state-warning/10" },
-              ].map(stat => (
-                <div key={stat.label} className="bg-white border border-border-line rounded-2xl p-4 shadow-sm">
-                  <p className="text-xs text-text-muted font-medium mb-1">{stat.label}</p>
-                  <p className={`text-xl font-bold tabular-nums ${stat.color}`}>{stat.value}</p>
+                {
+                  label: "Total Invoices",
+                  value: invoices.length,
+                  color: "text-brand-primary",
+                  bg: "bg-brand-primary-light",
+                },
+                {
+                  label: "Paid",
+                  value: invoices.filter((i) => i.status === "paid").length,
+                  color: "text-state-success",
+                  bg: "bg-state-success/10",
+                },
+                {
+                  label: "Overdue",
+                  value: invoices.filter((i) => i.status === "overdue").length,
+                  color: "text-state-danger",
+                  bg: "bg-state-danger/10",
+                },
+                {
+                  label: "Outstanding",
+                  value: `₹${totalOutstandingSum.toLocaleString("en-IN")}`,
+                  color: "text-state-warning",
+                  bg: "bg-state-warning/10",
+                },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="bg-white border border-border-line rounded-2xl p-4 shadow-sm"
+                >
+                  <p className="text-xs text-text-muted font-medium mb-1">
+                    {stat.label}
+                  </p>
+                  <p className={`text-xl font-bold tabular-nums ${stat.color}`}>
+                    {stat.value}
+                  </p>
                 </div>
               ))}
             </div>
@@ -314,19 +337,21 @@ function InvoicesContent() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               {/* Status Filter Tabs */}
               <div className="flex flex-wrap gap-1.5">
-                {["all", "draft", "sent", "viewed", "paid", "overdue"].map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => setStatusFilter(status)}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer capitalize ${
-                      statusFilter === status
-                        ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
-                        : "bg-white text-text-muted border border-border-line hover:text-text-main hover:border-brand-primary/30"
-                    }`}
-                  >
-                    {status}
-                  </button>
-                ))}
+                {["all", "draft", "sent", "viewed", "paid", "overdue"].map(
+                  (status) => (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(status)}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer capitalize ${
+                        statusFilter === status
+                          ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
+                          : "bg-white text-text-muted border border-border-line hover:text-text-main hover:border-brand-primary/30"
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ),
+                )}
               </div>
 
               {/* Search + New Invoice */}
@@ -369,8 +394,12 @@ function InvoicesContent() {
                   <tbody className="divide-y divide-border-line/50 text-[14px] font-medium text-text-main">
                     {filteredInvoices.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-16 text-center text-text-muted text-sm">
-                          No invoices found. Click &ldquo;New Invoice&rdquo; to create one.
+                        <td
+                          colSpan={7}
+                          className="py-16 text-center text-text-muted text-sm"
+                        >
+                          No invoices found. Click &ldquo;New Invoice&rdquo; to
+                          create one.
                         </td>
                       </tr>
                     ) : (
@@ -386,34 +415,67 @@ function InvoicesContent() {
                         return (
                           <tr
                             key={inv.id}
-                            onClick={() => router.push(`/invoices?id=${inv.id}`)}
+                            onClick={() =>
+                              router.push(`/invoices?id=${inv.id}`)
+                            }
                             className="hover:bg-surface-bg/60 cursor-pointer transition-colors group"
                           >
                             <td className="py-4 px-6">
                               <div className="flex items-center gap-2.5">
-                                <span className={`w-2 h-2 rounded-full shrink-0 ${
-                                  inv.status === "paid" ? "bg-state-success" :
-                                  inv.status === "overdue" ? "bg-state-danger" :
-                                  inv.status === "draft" ? "bg-slate-400" : "bg-state-warning"
-                                }`} />
-                                <span className="font-semibold text-brand-primary group-hover:underline">{inv.id}</span>
+                                <span
+                                  className={`w-2 h-2 rounded-full shrink-0 ${
+                                    inv.status === "paid"
+                                      ? "bg-state-success"
+                                      : inv.status === "overdue"
+                                        ? "bg-state-danger"
+                                        : inv.status === "draft"
+                                          ? "bg-slate-400"
+                                          : "bg-state-warning"
+                                  }`}
+                                />
+                                <span className="font-semibold text-brand-primary group-hover:underline">
+                                  {inv.id}
+                                </span>
                               </div>
                             </td>
                             <td className="py-4 px-6">
-                              <p className="font-semibold text-text-main">{inv.clientName}</p>
-                              <p className="text-[12px] text-text-muted mt-0.5">{inv.clientContact}</p>
+                              <p className="font-semibold text-text-main">
+                                {inv.clientName}
+                              </p>
+                              <p className="text-[12px] text-text-muted mt-0.5">
+                                {inv.clientContact}
+                              </p>
                             </td>
                             <td className="py-4 px-6 text-text-muted">
-                              {new Date(inv.issueDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                              {new Date(inv.issueDate).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                },
+                              )}
                             </td>
                             <td className="py-4 px-6">
                               {isOverdue ? (
                                 <span className="text-state-danger font-semibold">
-                                  {Math.round((Date.now() - new Date(inv.dueDate).getTime()) / (1000*60*60*24)) || 8}d overdue
+                                  {Math.round(
+                                    (Date.now() -
+                                      new Date(inv.dueDate).getTime()) /
+                                      (1000 * 60 * 60 * 24),
+                                  ) || 8}
+                                  d overdue
                                 </span>
                               ) : (
                                 <span className="text-text-main">
-                                  {new Date(inv.dueDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                                  {new Date(inv.dueDate).toLocaleDateString(
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    },
+                                  )}
                                 </span>
                               )}
                             </td>
@@ -421,7 +483,9 @@ function InvoicesContent() {
                               ₹{inv.amount.toLocaleString("en-IN")}
                             </td>
                             <td className="py-4 px-6">
-                              <span className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${statusStyle[inv.status] || "bg-slate-100 text-slate-500"}`}>
+                              <span
+                                className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${statusStyle[inv.status] || "bg-slate-100 text-slate-500"}`}
+                              >
                                 {inv.status}
                               </span>
                             </td>
@@ -437,9 +501,13 @@ function InvoicesContent() {
               </div>
 
               <div className="px-6 py-4 bg-white border-t border-border-line flex items-center justify-between text-sm text-text-muted font-medium">
-                <span>Showing {filteredInvoices.length} of {invoices.length} invoices</span>
+                <span>
+                  Showing {filteredInvoices.length} of {invoices.length}{" "}
+                  invoices
+                </span>
                 <span className="font-bold text-text-main tabular-nums">
-                  Total outstanding: ₹{totalOutstandingSum.toLocaleString("en-IN")}
+                  Total outstanding: ₹
+                  {totalOutstandingSum.toLocaleString("en-IN")}
                 </span>
               </div>
             </div>

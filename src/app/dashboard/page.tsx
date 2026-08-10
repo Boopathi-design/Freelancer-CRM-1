@@ -59,24 +59,106 @@ export default function Dashboard() {
     }, 3000);
   };
 
-  const handleSendReminder = (invoice: Invoice) => {
-    triggerToast(
-      `Reminder sent successfully to ${invoice.clientContact} (${invoice.clientEmail}) for ${invoice.id}`,
-    );
-    mockDb.addLog(
-      "webhook_reconciliation",
-      `Sent payment reminder for ${invoice.id} (${invoice.clientName}) valued at ₹${invoice.amount.toLocaleString("en-IN")}.`,
-    );
-    window.dispatchEvent(new Event("invoicehq_db_update"));
+  const handleSendReminder = async (invoice: Invoice) => {
+    triggerToast("Generating AI reminder...");
+
+    try {
+      const response = await fetch("/api/ai-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "reminder",
+          payload: {
+            clientName: invoice.clientName,
+            invoiceNumber: invoice.id,
+            amount: invoice.amount,
+            dueDate: invoice.dueDate,
+            daysOverdue: Math.max(
+              1,
+              Math.round(
+                (Date.now() - new Date(invoice.dueDate).getTime()) /
+                  (1000 * 60 * 60 * 24),
+              ),
+            ),
+          },
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "AI reminder could not be created.");
+      }
+
+      const generatedMessage =
+        result.text || "Payment reminder generated successfully.";
+      mockDb.addLog(
+        "webhook_reconciliation",
+        `AI payment reminder for ${invoice.id} (${invoice.clientName}): ${generatedMessage}`,
+      );
+      triggerToast(
+        `AI reminder ready for ${invoice.clientName}: ${generatedMessage.slice(0, 60)}${generatedMessage.length > 60 ? "..." : ""}`,
+      );
+      window.dispatchEvent(new Event("invoicehq_db_update"));
+    } catch (error) {
+      console.error("Reminder generation failed:", error);
+      triggerToast(
+        "AI reminder unavailable. Please retry or use the classic reminder flow.",
+      );
+    }
   };
 
-  const handleSendSmartRemindersAll = () => {
-    triggerToast("Smart notifications sent to all 2 overdue client accounts!");
-    mockDb.addLog(
-      "webhook_reconciliation",
-      "Automated system: Dispatched firm follow-ups and updated payment links to Webcraft Solutions and Brand Alchemy.",
+  const handleSendSmartRemindersAll = async () => {
+    const overdueInvoices = needsActionInvoices.filter(
+      (inv) => inv.status === "overdue",
     );
-    window.dispatchEvent(new Event("invoicehq_db_update"));
+    if (overdueInvoices.length === 0) {
+      triggerToast("No overdue invoices need a reminder right now.");
+      return;
+    }
+
+    triggerToast("Generating smart AI reminders...");
+
+    try {
+      const response = await fetch("/api/ai-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "reminder",
+          payload: {
+            clientName: overdueInvoices[0].clientName,
+            invoiceNumber: overdueInvoices[0].id,
+            amount: overdueInvoices[0].amount,
+            dueDate: overdueInvoices[0].dueDate,
+            daysOverdue: Math.max(
+              1,
+              Math.round(
+                (Date.now() - new Date(overdueInvoices[0].dueDate).getTime()) /
+                  (1000 * 60 * 60 * 24),
+              ),
+            ),
+          },
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          result.error || "AI reminder batch could not be generated.",
+        );
+      }
+
+      triggerToast(
+        `Smart AI reminders queued for ${overdueInvoices.length} overdue account${overdueInvoices.length > 1 ? "s" : ""}.`,
+      );
+      mockDb.addLog(
+        "webhook_reconciliation",
+        `AI reminder batch generated for ${overdueInvoices.length} overdue invoice(s): ${result.text}`,
+      );
+      window.dispatchEvent(new Event("invoicehq_db_update"));
+    } catch (error) {
+      console.error("Batch reminder generation failed:", error);
+      triggerToast("AI reminders are temporarily unavailable.");
+    }
   };
 
   const handleCopyLink = (invoice: Invoice) => {
